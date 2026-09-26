@@ -1,0 +1,26 @@
+src/updater.js
+  s_283a0554586b29::t_ee8c28ed82d18c 4,61
+  s_283a0554586b29::t_00cf256e889e49 1-2,5-7,12,14-25,27-28,37-60,62-98
+  s_283a0554586b29::t_17367621df785e 3,8-11,26
+  s_283a0554586b29::t_73fe15385c2a41 13,29-36
+src/cli.js
+  s_283a0554586b29::t_00cf256e889e49 9,27
+README.md
+  s_283a0554586b29::t_a49c0722438e6a 61-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "919ad2a4e1ab9106412f7a6f5d5752ff19f9b56a",
+  "prompts": {},
+  "sessions": {
+    "s_283a0554586b29": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0dc59-f24c-7721-812f-55cdafd64823",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishek.varshney@jiostar.com>"
+    }
+  }
+}
