@@ -38,7 +38,7 @@ async function hook(host) {
     userIntent: input.user_prompt,
     guardrails: config.guardrails
   };
-  const result = await assess(action, new JevProvider());
+  const result = await assess(action, new JevProvider({ settings: config.jev }));
   await audit(action, result);
   const output = host === "codex" ? codexDecision(result) : claudeDecision(result);
   if (output) process.stdout.write(`${JSON.stringify(output)}\n`);
@@ -47,7 +47,7 @@ async function hook(host) {
 async function check(commandText) {
   if (!commandText) throw new Error("Usage: jevexec check <command>");
   const action = { host: "cli", tool: "shell", input: { command: commandText }, cwd: process.cwd(), guardrails: config.guardrails };
-  const result = await assess(action, new JevProvider());
+  const result = await assess(action, new JevProvider({ settings: config.jev }));
   await audit(action, result);
   console.log(JSON.stringify(result, null, 2));
   if (result.decision === "deny" || result.decision === "unavailable") process.exitCode = 2;
@@ -72,7 +72,7 @@ async function rules(args) {
     return;
   }
   if (subcommand === "clear") {
-    await writeConfig({ guardrails: [] });
+    await writeConfig({ ...current, guardrails: [] });
     return;
   }
   throw new Error("Usage: jevexec rules <list|add <rule>|remove <id>|clear>");
@@ -91,7 +91,8 @@ async function hooks(args) {
 }
 
 function status() {
-  console.log(JSON.stringify({ config: configPath(), activeGuardrails: config.guardrails.length, provider: process.env.OPENROUTER_API_KEY || process.env.JEV_API_KEY ? "configured" : "missing key", model: process.env.JEV_MODEL || "typesafe/jev-1.13", codexAsk: "blocked: no native hook prompt", claudeAsk: "native permission prompt" }, null, 2));
+  const provider = new JevProvider({ settings: config.jev });
+  console.log(JSON.stringify({ config: configPath(), activeGuardrails: config.guardrails.length, provider: provider.provider, apiKeyEnv: provider.apiKeyEnv, apiKeyConfigured: Boolean(provider.apiKey), model: provider.model, codexAsk: "blocked: no native hook prompt", claudeAsk: "native permission prompt" }, null, 2));
 }
 
 async function audit(action, result) {

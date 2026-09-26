@@ -182,7 +182,10 @@ else
     echo "Add $BIN_DIR to PATH to run 'jevexec' directly."
   fi
   echo "jevexec installed from: $SOURCE_DIR"
-  if [[ -z "${OPENROUTER_API_KEY:-}" && -z "${JEV_API_KEY:-}" ]]; then
-    echo "Set OPENROUTER_API_KEY in the environment before launching Codex or Claude Code."
+  if [[ -z "${OPENROUTER_API_KEY:-}" && -z "${TYPESAFE_API_KEY:-}" && -z "${JEV_API_KEY:-}" ]]; then
+    echo "Set the API key matching JEV_PROVIDER before launching Codex or Claude Code: OPENROUTER_API_KEY or TYPESAFE_API_KEY."
+  fi
+  if [[ -n "${JEV_PROVIDER:-}" && "${JEV_PROVIDER}" != "openrouter" && "${JEV_PROVIDER}" != "typesafe" ]]; then
+    echo "Unsupported JEV_PROVIDER '${JEV_PROVIDER}'; choose openrouter or typesafe."
   fi
 fi

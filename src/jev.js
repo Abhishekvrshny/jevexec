@@ -2,6 +2,20 @@ import { SafeAssessmentError } from "./types.js";
 
 const DEFAULT_BASE_URL = "https://openrouter.ai";
 const DEFAULT_MODEL = "typesafe/jev-1.13";
+const PROVIDERS = {
+  openrouter: {
+    apiKeyEnv: "OPENROUTER_API_KEY",
+    baseUrl: DEFAULT_BASE_URL,
+    model: DEFAULT_MODEL,
+    endpoint: decisionsEndpoint
+  },
+  typesafe: {
+    apiKeyEnv: "TYPESAFE_API_KEY",
+    baseUrl: "https://api.typesafe.ai",
+    model: "jev-latest",
+    endpoint: typesafeEndpoint
+  }
+};
 const RISK_LEVELS = [
   "0: benign, read-only or easily reversible",
   "1: meaningful side effects or uncertain scope",
@@ -9,17 +23,22 @@ const RISK_LEVELS = [
 ];
 
 export class JevProvider {
-  constructor({ baseUrl = process.env.JEV_BASE_URL || DEFAULT_BASE_URL, apiKey = process.env.OPENROUTER_API_KEY || process.env.JEV_API_KEY, model = process.env.JEV_MODEL || DEFAULT_MODEL, timeoutMs = 15_000, fetchImpl = fetch } = {}) {
-    this.baseUrl = baseUrl;
-    this.apiKey = apiKey;
-    this.model = model;
+  constructor({ settings = {}, provider, baseUrl, apiKey, model, timeoutMs = 15_000, fetchImpl = fetch, env = process.env } = {}) {
+    this.provider = provider ?? env.JEV_PROVIDER ?? settings.provider ?? "openrouter";
+    this.providerConfig = PROVIDERS[this.provider];
+    const apiKeyEnv = this.providerConfig?.apiKeyEnv;
+    this.apiKeyEnv = apiKeyEnv;
+    this.baseUrl = baseUrl ?? env.JEV_BASE_URL ?? settings.baseUrl ?? this.providerConfig?.baseUrl;
+    this.apiKey = apiKey ?? (apiKeyEnv ? env[apiKeyEnv] : undefined) ?? env.JEV_API_KEY;
+    this.model = model ?? env.JEV_MODEL ?? settings.model ?? this.providerConfig?.model;
     this.timeoutMs = timeoutMs;
     this.fetchImpl = fetchImpl;
   }
 
   async evaluate(action) {
-    if (!this.apiKey) throw new SafeAssessmentError("Missing API key: set OPENROUTER_API_KEY or JEV_API_KEY in the environment running jevexec.");
-    const endpoint = decisionsEndpoint(this.baseUrl);
+    if (!this.providerConfig) throw new SafeAssessmentError(`Unsupported JEV_PROVIDER '${this.provider}'; choose openrouter or typesafe.`);
+    if (!this.apiKey) throw new SafeAssessmentError(`Missing API key: set ${this.apiKeyEnv} or JEV_API_KEY in the environment running jevexec.`);
+    const endpoint = this.providerConfig.endpoint(this.baseUrl);
     const state = JSON.stringify({
       host: action.host,
       tool: action.tool,
@@ -103,6 +122,12 @@ export function decisionsEndpoint(baseUrl) {
   if (trimmed.endsWith("/api/alpha/decisions")) return trimmed;
   if (trimmed.endsWith("/api/v1")) return `${trimmed.slice(0, -7)}/api/alpha/decisions`;
   return `${trimmed}/api/alpha/decisions`;
+}
+
+export function typesafeEndpoint(baseUrl) {
+  const trimmed = baseUrl.replace(/\/+$/, "");
+  if (trimmed.endsWith("/v1/systemone")) return trimmed;
+  return `${trimmed}/v1/systemone`;
 }
 
 export function redact(value) {

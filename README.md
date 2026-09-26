@@ -8,7 +8,7 @@ deny decisions; it does not run the checked command.
 
 - Node.js 20 or newer
 - Python 3 for the installer
-- `OPENROUTER_API_KEY` or `JEV_API_KEY` for Jev checks
+- `OPENROUTER_API_KEY` or `TYPESAFE_API_KEY`, depending on the selected provider
 
 ## Install
 
@@ -26,16 +26,41 @@ of `both` to remove the hooks.
 
 ## Setup
 
-Set the API key in the environment used to launch Codex or Claude Code:
+Select a provider and set its API key in the environment used to launch Codex
+or Claude Code. OpenRouter remains the default for existing installations:
 
 ```sh
+export JEV_PROVIDER="openrouter" # or "typesafe"
 export OPENROUTER_API_KEY="your-key"
-export JEV_MODEL="typesafe/jev-1.13" # optional
 ```
 
-`JEV_BASE_URL` optionally overrides the provider URL. Credentials are read from
-the environment and are not stored in jevexec's config. Set
-`JEVEXEC_AUTO_UPDATE=0` to disable background update checks.
+For TypeSafe, select `typesafe` and set `TYPESAFE_API_KEY` instead. Defaults are
+`typesafe/jev-1.13` on OpenRouter and `jev-latest` on TypeSafe. `JEV_MODEL`
+overrides the model for either provider.
+
+OpenRouter sends requests to `https://openrouter.ai/api/alpha/decisions` by
+default. TypeSafe sends requests to `https://api.typesafe.ai/v1/systemone`.
+`JEV_BASE_URL` overrides the selected provider's base URL; the provider's API
+path is appended automatically.
+
+Provider, model, and base URL can also be set in the `jev` object in the
+jevexec config file. Environment variables take precedence over that file:
+
+```json
+{
+  "jev": {
+    "provider": "openrouter",
+    "model": "typesafe/jev-1.13",
+    "baseUrl": "https://openrouter.ai"
+  },
+  "guardrails": []
+}
+```
+
+Keys are read from the environment and are never saved in the config.
+`JEV_API_KEY` remains
+as a compatibility fallback when the selected provider's key variable is
+unset. Set `JEVEXEC_AUTO_UPDATE=0` to disable background update checks.
 
 ## Commands
 
