@@ -1,0 +1,30 @@
+src/env.js
+  s_f3de40e9ac75de::t_5077d2b66a96c4 1-33
+README.md
+  s_f3de40e9ac75de::t_5077d2b66a96c4 80-89
+  s_f3de40e9ac75de::t_517c9e739c6305 36-40,70-73,76,90
+  s_f3de40e9ac75de::t_750aed5ca2d2b4 75,77-79,91
+  s_f3de40e9ac75de::t_ee4c31d4b8ce6c 74
+src/cli.js
+  s_f3de40e9ac75de::t_5077d2b66a96c4 12,31
+install.sh
+  s_f3de40e9ac75de::t_fc01517fcabdd0 51
+  s_f3de40e9ac75de::t_3bce13bf6f3c23 31-39,41-50,52-53,72,74-76,78-107
+  s_f3de40e9ac75de::t_517c9e739c6305 40,54-71,73,77,108-110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "b9b41555937d985a81719d15a698eefc741e7a3d",
+  "prompts": {},
+  "sessions": {
+    "s_f3de40e9ac75de": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0def6-9fa2-77c0-a6b2-cb9e63724756",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishekvrshny@gmail.com>"
+    }
+  }
+}
