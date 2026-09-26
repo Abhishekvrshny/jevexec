@@ -1,0 +1,47 @@
+install.sh
+  s_7a4587edb07711::t_ec78077907f74c 1-150
+.gitignore
+  s_7a4587edb07711::t_90d7d1e94eec63 1-4
+README.md
+  s_7a4587edb07711::t_e8d3f8e49495df 1-87
+docs/architecture.md
+  s_7a4587edb07711::t_fce1b8090a9344 1-23
+hooks/claude.json
+  s_7a4587edb07711::t_7d9466763695a8 1-17
+hooks/codex.json
+  s_7a4587edb07711::t_4971c1fc02efe7 1-17
+package.json
+  s_7a4587edb07711::t_bec63e2700bea9 1-11
+src/adapters.js
+  s_7a4587edb07711::t_f270e9b5ed66ed 1-16
+src/cli.js
+  s_7a4587edb07711::t_14f4b5b90019d3 1-97
+src/config.js
+  s_7a4587edb07711::t_ee6d267dc899f4 1-23
+src/core.js
+  s_7a4587edb07711::t_d1561383d81c24 1-77
+src/jev.js
+  s_7a4587edb07711::t_958d22f0fed414 1-129
+src/types.js
+  s_7a4587edb07711::t_9330f67e7bfe3a 1-12
+test/core.test.js
+  s_7a4587edb07711::t_a4b8800f76e059 1-36
+test/jev.test.js
+  s_7a4587edb07711::t_5cc69a13baa6e4 1-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "f8c825f1c23c438713e090997bdf03e608abd54e",
+  "prompts": {},
+  "sessions": {
+    "s_7a4587edb07711": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0dbb7-daea-7320-b2e7-c6a4bd9fc820",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishek.varshney@jiostar.com>"
+    }
+  }
+}
