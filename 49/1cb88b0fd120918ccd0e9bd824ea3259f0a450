@@ -1,0 +1,25 @@
+README.md
+  s_5e8aa3ccca159b::t_eed08bb4f3198a 47,58-60
+  s_5e8aa3ccca159b::t_adce88d91239b2 61
+install.sh
+  s_5e8aa3ccca159b::t_5a1a259e7773c8 112-114
+  s_5e8aa3ccca159b::t_f0f6c4d57361f4 100-101,103-105,107-111,115-116
+src/cli.js
+  s_5e8aa3ccca159b::t_1ee68084259d7c 3,5-6,20,81-92,113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "491cb88b0fd120918ccd0e9bd824ea3259f0a450",
+  "prompts": {},
+  "sessions": {
+    "s_5e8aa3ccca159b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0dc74-945a-7cf3-8daf-2158427a8a5a",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishek.varshney@jiostar.com>"
+    }
+  }
+}
