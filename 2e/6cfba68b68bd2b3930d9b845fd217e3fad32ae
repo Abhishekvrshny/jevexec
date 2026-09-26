@@ -1,0 +1,21 @@
+README.md
+  s_59093eae136013::t_d736de72515929 22-23,41-46
+  s_59093eae136013::t_c2a17d0de56397 3-5,10-15,18,21,24-25,27,30-31,34-36,38,40,47,52-57,60-62,65-66
+  s_59093eae136013::t_eb9134fea0ac49 49-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "2e6cfba68b68bd2b3930d9b845fd217e3fad32ae",
+  "prompts": {},
+  "sessions": {
+    "s_59093eae136013": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0dc5f-e40e-7850-ab98-df490d2dec33",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishek.varshney@jiostar.com>"
+    }
+  }
+}
