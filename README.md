@@ -18,6 +18,13 @@ Install hooks for both hosts:
 curl -fsSL https://raw.githubusercontent.com/Abhishekvrshny/jevexec/main/install.sh | bash -s -- both
 ```
 
+If your network cannot establish a TLS connection to `raw.githubusercontent.com`,
+use GitHub's resolved address:
+
+```sh
+curl --resolve raw.githubusercontent.com:443:185.199.108.133 -fsSL https://raw.githubusercontent.com/Abhishekvrshny/jevexec/main/install.sh | bash
+```
+
 The installer adds the `jevexec` command in `~/.local/bin` and registers hooks
 for both hosts without replacing other host settings. Use `codex` or `claude`
 instead of `both` to install for one host. Set `JEVEXEC_BIN_DIR` to install the
@@ -71,6 +78,7 @@ jevexec rules list
 jevexec rules add 'Do not push to production'
 jevexec rules remove <id>
 jevexec rules clear
+jevexec hooks install [codex|claude|both]
 jevexec hooks uninstall
 ```
 
@@ -82,9 +90,10 @@ active rule count, provider key status, and model. Rules are stored in
 `${XDG_CONFIG_HOME:-~/.config}/jevexec/config.json`; audit entries are written to
 `audit.jsonl` beside it.
 
-`hooks uninstall` removes jevexec's Codex and Claude `PreToolUse` hooks. It keeps
-the jevexec runtime, saved rules, and audit log in place. You can reinstall the
-hooks later with `install.sh both`.
+`hooks install` registers jevexec's `PreToolUse` hook for both Codex and Claude;
+pass `codex` or `claude` to install for one host. `hooks uninstall` removes the
+hooks from both hosts. These commands keep the jevexec runtime, saved rules, and
+audit log in place.
 
 For Codex, Jev-approved actions receive an explicit hook allow. Jev `ask`,
 `deny`, and `unavailable` results defer to Codex's configured permission flow,

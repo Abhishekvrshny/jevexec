@@ -80,13 +80,18 @@ async function rules(args) {
 }
 
 async function hooks(args) {
-  const [subcommand] = args;
-  if (subcommand !== "uninstall" || args.length !== 1) {
-    throw new Error("Usage: jevexec hooks uninstall");
+  const installScript = resolve(dirname(fileURLToPath(import.meta.url)), "..", "install.sh");
+  const [subcommand, host] = args;
+  let target;
+  if (subcommand === "install" && args.length <= 2 && [undefined, "both", "codex", "claude"].includes(host)) {
+    target = host ?? "both";
+  } else if (subcommand === "uninstall" && args.length === 1) {
+    target = "uninstall";
+  } else {
+    throw new Error("Usage: jevexec hooks <install [codex|claude|both]|uninstall>");
   }
 
-  const installScript = resolve(dirname(fileURLToPath(import.meta.url)), "..", "install.sh");
-  const result = spawnSync("bash", [installScript, "uninstall"], { stdio: "inherit" });
+  const result = spawnSync("bash", [installScript, target], { stdio: "inherit" });
   if (result.error) throw result.error;
   if (result.status !== 0) process.exitCode = result.status ?? 1;
 }
@@ -112,5 +117,5 @@ async function audit(action, result) {
 }
 
 function usage() {
-  console.log("jevexec hook <codex|claude> | check <command> | hooks uninstall | rules <list|add|remove|clear> | status");
+  console.log("jevexec hook <codex|claude> | check <command> | hooks <install [codex|claude|both]|uninstall> | rules <list|add|remove|clear> | status");
 }
