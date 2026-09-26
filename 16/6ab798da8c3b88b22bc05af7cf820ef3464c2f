@@ -1,0 +1,24 @@
+test/core.test.js
+  s_0dc38cf638083d::t_414f3d8bc74e23 32,35-36
+README.md
+  s_0dc38cf638083d::t_414f3d8bc74e23 119-122
+src/adapters.js
+  s_0dc38cf638083d::t_414f3d8bc74e23 2
+  s_0dc38cf638083d::t_3e9529840d22e6 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "166ab798da8c3b88b22bc05af7cf820ef3464c2f",
+  "prompts": {},
+  "sessions": {
+    "s_0dc38cf638083d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0df0f-058a-7113-a084-952e46c9959c",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishekvrshny@gmail.com>"
+    }
+  }
+}
