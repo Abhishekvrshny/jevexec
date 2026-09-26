@@ -4,12 +4,12 @@ import { SafeAssessmentError } from "./types.js";
 // Only simple, known read-only command forms get a local pass. This is not a shell parser.
 const READ_ONLY = new Set(["pwd", "ls", "cat", "head", "tail", "wc", "rg", "grep", "git status", "git diff", "git log"]);
 const HARD_DENY = [
-  /\brm\s+(?:-[a-zA-Z]*r[a-zA-Z]*f|--recursive\s+--force)\s+\/(?:\s|$)/,
-  /\brm\s+[^\n]*--no-preserve-root[^\n]*\//i,
-  /\bchmod\s+-R\s+(?:777|a\+rwx)\s+\//i,
-  /\bmkfs(?:\.[a-z0-9]+)?\b/i,
-  /:\s*\(\s*\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;\s*:/,
-  /\b(?:dd\s+if=\S+\s+of=\/dev\/|curl\b[^\n|]*\|\s*(?:sudo\s+)?(?:sh|bash)\b)/i
+  { pattern: /\brm\s+(?:-[a-zA-Z]*r[a-zA-Z]*f|--recursive\s+--force)\s+\/(?:\s|$)/, reason: "recursive forced deletion of the filesystem root" },
+  { pattern: /\brm\s+[^\n]*--no-preserve-root[^\n]*\//i, reason: "deletion with --no-preserve-root" },
+  { pattern: /\bchmod\s+-R\s+(?:777|a\+rwx)\s+\//i, reason: "recursive world-writable permissions on the filesystem root" },
+  { pattern: /\bmkfs(?:\.[a-z0-9]+)?\b/i, reason: "filesystem formatting" },
+  { pattern: /:\s*\(\s*\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;\s*:/, reason: "fork bomb pattern" },
+  { pattern: /\b(?:dd\s+if=\S+\s+of=\/dev\/|curl\b[^\n|]*\|\s*(?:sudo\s+)?(?:sh|bash)\b)/i, reason: "direct device overwrite or execution of a downloaded script" }
 ];
 const SHELL_META = /[|;&<>`\n]/;
 const PROTECTED_PATH = /(?:^|[\s/])(?:\.env(?:\.[\w-]+)?|\.ssh|\.aws|\.gnupg|id_rsa|id_ed25519|credentials)(?:$|[\s/])/i;
@@ -17,8 +17,9 @@ const PROTECTED_PATH = /(?:^|[\s/])(?:\.env(?:\.[\w-]+)?|\.ssh|\.aws|\.gnupg|id_
 export function assessLocal(action) {
   const command = commandText(action);
   if (!command) return null;
-  if (HARD_DENY.some((pattern) => pattern.test(command))) {
-    return assessment("deny", "Matches a local hard-deny rule.", "local-hard-deny");
+  const hardDeny = HARD_DENY.find(({ pattern }) => pattern.test(command));
+  if (hardDeny) {
+    return assessment("deny", `Denied by local hard-deny rule: ${hardDeny.reason}.`, "local-hard-deny");
   }
   if (action.guardrails?.length) return null;
   if (PROTECTED_PATH.test(command)) return null;
@@ -39,20 +40,26 @@ export function assessLocal(action) {
   return null;
 }
 
-export function combineSignals(signals, thresholds = {}) {
-  const denyAt = thresholds.deny ?? 0.85;
+export function combineSignals(signals, thresholds = {}, action = {}) {
   const askAt = thresholds.ask ?? 0.35;
-  if (signals.guardrails?.some((rule) => rule.probability <= 0.2)) {
-    return assessment("deny", "Jev found an active user guardrail conflict.", "jev-guardrail");
+  const deniedRule = signals.guardrails?.find((rule) => rule.probability <= 0.2);
+  if (deniedRule) {
+    const configuredRule = action.guardrails?.find((rule) => rule.id === deniedRule.id);
+    const ruleContext = configuredRule ? ` Rule ${configuredRule.id}: “${configuredRule.text}”.` : ` Rule ${deniedRule.id}.`;
+    return assessment("deny", `Denied because Jev found this action conflicts with an explicit user rule.${ruleContext}`, "jev-guardrail");
   }
   if (signals.guardrails?.some((rule) => rule.probability < 0.8)) {
-    return assessment("ask", "Jev could not confirm that every active user guardrail is followed.", "jev-guardrail");
+    return assessment("ask", "Jev could not confirm that this action follows every active user rule; review it in the normal permission prompt.", "jev-guardrail");
   }
-  if (signals.risk >= denyAt) return assessment("deny", "Jev rated this action as high risk.", "jev");
-  if (signals.risk >= askAt || (signals.approval >= 0.5 && signals.authorization < 0.8)) {
-    return assessment("ask", "Jev recommends human review before this action.", "jev");
+  if (signals.risk >= askAt || signals.approval >= 0.5 || signals.authorization < 0.8) {
+    const context = signals.risk >= askAt
+      ? `Jev rated this action as elevated risk (${signals.risk.toFixed(2)}).`
+      : signals.approval >= 0.5
+        ? "Jev recommends human review before this action."
+        : "Jev could not confirm that the user directly authorized this action.";
+    return assessment("ask", `${context} Continue through the normal permission prompt.`, "jev-risk");
   }
-  return assessment("allow", "Jev found no active guardrail conflict and low risk.", "jev");
+  return assessment("allow", "Jev found low risk and no explicit user-rule conflict.", "jev");
 }
 
 export async function assess(action, provider, { thresholds } = {}) {
@@ -60,7 +67,7 @@ export async function assess(action, provider, { thresholds } = {}) {
   if (local) return local;
   try {
     const signals = await provider.evaluate(action);
-    return combineSignals(signals, thresholds);
+    return combineSignals(signals, thresholds, action);
   } catch (error) {
     const reason = error instanceof SafeAssessmentError ? error.message : "Jev request failed or timed out.";
     return assessment("unavailable", reason, "jev-error");

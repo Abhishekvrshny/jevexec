@@ -1,11 +1,10 @@
 # First implementation
 
 The host adapters normalize a pre-execution event and translate the shared
-`allow | ask | deny | unavailable` result. `src/core.js` runs local hard denies
-first; only simple, known read-only calls can pass locally. Active
-natural-language guardrails always force Jev evaluation. Uncertain syntax,
-protected paths, and unknown actions go to Jev. Provider failure is
-`unavailable`, which each adapter blocks.
+`allow | ask | deny | unavailable` result. `src/core.js` runs explicit local
+hard-deny rules first; only simple, known read-only calls can pass locally.
+Active natural-language guardrails always force Jev evaluation. Uncertain
+syntax, protected paths, and unknown actions go to Jev.
 
 Provider selection is explicit through `JEV_PROVIDER`; it is never inferred
 from a key or model name. OpenRouter is the default and uses
@@ -23,9 +22,20 @@ file contents, credentials, and instruction files are excluded. Payloads over
 the initial bound fail closed instead of dropping guardrails. Requests retry
 once for HTTP 429 and 5xx responses under the same 15 second timeout.
 
-For Codex, Jev `allow` results explicitly approve the tool call. Every other
-result returns no permission decision, leaving the action to Codex's configured
-permission flow. Claude Code receives native `ask` and `deny` decisions.
+Decisioning follows this precedence:
+
+1. An explicit local hard-deny rule or a clear conflict with a configured user
+   guardrail denies the action and returns the matching rule context.
+2. Low risk, confirmed user authorization, no guardrail conflict, and no Jev
+   recommendation for human review allows the action.
+3. Risk, uncertain authorization or guardrail compliance, and provider
+   unavailability defer to the host's normal permission prompt. A high risk
+   score by itself is not a deny rule.
+
+For Codex, explicit `allow` and `deny` results bypass the prompt; `ask` and
+`unavailable` return no decision and preserve Codex's normal permission flow.
+Claude Code receives native `ask` and explicit `deny` decisions; `allow` and
+`unavailable` preserve its normal permission flow.
 
 This is a first slice, not the full recommended design. Semantic memory,
 project-scoped config, complete guardrail editing, host install

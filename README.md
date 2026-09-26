@@ -116,10 +116,17 @@ active rule count, provider key status, and model. Rules are stored in
 `hooks uninstall` removes the hooks from both hosts. These commands keep the
 jevexec runtime, saved rules, and audit log in place.
 
-For Codex, Jev-approved permission requests return an allow decision and
-proceed without the normal approval prompt. Jev `ask`, `deny`, and
-`unavailable` results produce no decision, so Codex continues with its normal
-approval prompt. The Codex hook runs at `PermissionRequest`, which only fires
+Jev decisioning treats explicit deny rules as decisive: matching local
+hard-deny rules and clear conflicts with configured user guardrails deny the
+action and include the rule context. Jev allows a low-risk action when the user
+authorized it and there is no guardrail conflict or review recommendation.
+Risk, uncertain authorization or rule compliance, and Jev unavailability leave
+the decision to the normal host permission prompt. High risk alone is not an
+explicit deny rule.
+
+For Codex, explicit `allow` and `deny` decisions bypass the approval prompt;
+`ask` and `unavailable` produce no hook decision, so Codex continues its normal
+permission flow. The Codex hook runs at `PermissionRequest`, which only fires
 when Codex is about to ask for approval; it does not assess tools that already
 proceed without approval.
 
