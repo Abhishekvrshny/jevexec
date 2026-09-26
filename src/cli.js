@@ -9,6 +9,7 @@ import { configPath, readConfig, writeConfig } from "./config.js";
 import { JevProvider } from "./jev.js";
 import { claudeDecision, codexDecision } from "./adapters.js";
 import { startUpdateCheck } from "./updater.js";
+import { loadHookEnvironment } from "./env.js";
 
 const [command, ...args] = process.argv.slice(2);
 const config = await readConfig();
@@ -27,6 +28,7 @@ try {
 
 async function hook(host) {
   if (host !== "codex" && host !== "claude") throw new Error("Usage: jevexec hook <codex|claude>");
+  await loadHookEnvironment();
   await startUpdateCheck();
   let raw = "";
   for await (const chunk of process.stdin) raw += chunk;

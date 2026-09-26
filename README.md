@@ -33,8 +33,11 @@ of `both` to remove the hooks.
 
 ## Setup
 
-Select a provider and set its API key in the environment used to launch Codex
-or Claude Code. OpenRouter remains the default for existing installations:
+OpenRouter is the default provider. Set `JEV_PROVIDER=typesafe` to use
+TypeSafe. During installation, jevexec checks for the selected provider's key
+in the current environment or private env file. If neither that key nor
+`JEV_API_KEY` is configured, the installer prompts for the key before it
+registers hooks and saves it to the private env file described below.
 
 ```sh
 export JEV_PROVIDER="openrouter" # or "typesafe"
@@ -64,10 +67,28 @@ jevexec config file. Environment variables take precedence over that file:
 }
 ```
 
-Keys are read from the environment and are never saved in the config.
-`JEV_API_KEY` remains
-as a compatibility fallback when the selected provider's key variable is
-unset. Set `JEVEXEC_AUTO_UPDATE=0` to disable background update checks.
+Keys are read from the process environment first and the private env file
+second; they are never saved in the jevexec config. `JEV_API_KEY` remains a
+compatibility fallback when the selected provider's key variable is unset.
+Set `JEVEXEC_AUTO_UPDATE=0` to disable background update checks.
+
+The installer stores keys in
+`${XDG_CONFIG_HOME:-~/.config}/jevexec/env` (one `NAME=value` per line) with
+owner-only access. It copies a key from the installer process environment when
+one is already configured, and prompts only when neither the environment nor
+the file has a usable key. To configure or rotate a key manually, use:
+
+```sh
+mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/jevexec"
+chmod 700 "${XDG_CONFIG_HOME:-$HOME/.config}/jevexec"
+${EDITOR:-vi} "${XDG_CONFIG_HOME:-$HOME/.config}/jevexec/env"
+chmod 600 "${XDG_CONFIG_HOME:-$HOME/.config}/jevexec/env"
+```
+
+For example, the file can contain `OPENROUTER_API_KEY=...`. The hook reads it
+on each invocation; variables already present in the host process take
+precedence. The installer only prompts if no key for the selected provider or
+`JEV_API_KEY` is configured. Uninstalling hooks never prompts for a key.
 
 ## Commands
 

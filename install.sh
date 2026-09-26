@@ -28,6 +28,86 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
+if [[ "$TARGET" != "uninstall" ]]; then
+  PROVIDER="${JEV_PROVIDER:-openrouter}"
+  case "$PROVIDER" in
+    openrouter) PROVIDER_KEY_NAME="OPENROUTER_API_KEY" ;;
+    typesafe) PROVIDER_KEY_NAME="TYPESAFE_API_KEY" ;;
+    *) echo "Unsupported JEV_PROVIDER '$PROVIDER'; choose openrouter or typesafe." >&2; exit 2 ;;
+  esac
+  CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/jevexec"
+  ENV_FILE="$CONFIG_DIR/env"
+
+  if [[ -L "$ENV_FILE" ]]; then
+    echo "Refusing to use a symbolic link for the jevexec key file: $ENV_FILE" >&2
+    exit 1
+  fi
+  if [[ -e "$ENV_FILE" && ! -f "$ENV_FILE" ]]; then
+    echo "The jevexec key path is not a regular file: $ENV_FILE" >&2
+    exit 1
+  fi
+  if [[ -d "$CONFIG_DIR" ]]; then chmod 700 "$CONFIG_DIR"; fi
+  if [[ -f "$ENV_FILE" ]]; then chmod 600 "$ENV_FILE"; fi
+
+  env_file_has_key() {
+    python3 - "$ENV_FILE" "$1" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+path, name = Path(sys.argv[1]), sys.argv[2]
+try:
+    contents = path.read_text()
+except FileNotFoundError:
+    raise SystemExit(1)
+except OSError:
+    raise SystemExit(1)
+pattern = re.compile(r"^\s*(?:export\s+)?" + re.escape(name) + r"\s*=\s*(.*?)\s*$")
+for line in contents.splitlines():
+    match = pattern.match(line)
+    if match and match.group(1).strip("\"'"):
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+  }
+
+  ENV_FILE_KEY_CONFIGURED=0
+  if env_file_has_key "$PROVIDER_KEY_NAME" || env_file_has_key JEV_API_KEY; then
+    ENV_FILE_KEY_CONFIGURED=1
+  fi
+
+  if [[ "$ENV_FILE_KEY_CONFIGURED" -eq 0 ]]; then
+    if [[ -n "${!PROVIDER_KEY_NAME:-}" ]]; then
+      API_KEY="${!PROVIDER_KEY_NAME}"
+      API_KEY_NAME="$PROVIDER_KEY_NAME"
+    elif [[ -n "${JEV_API_KEY:-}" ]]; then
+      API_KEY="$JEV_API_KEY"
+      API_KEY_NAME="JEV_API_KEY"
+    else
+      if ! { exec 9<>/dev/tty; } 2>/dev/null; then
+        echo "No API key is configured for $PROVIDER. Set $PROVIDER_KEY_NAME (or JEV_API_KEY) and rerun installation." >&2
+        exit 1
+      fi
+      echo "jevexec requires an API key for $PROVIDER before installing its hooks."
+      read -r -s -p "Enter $PROVIDER_KEY_NAME: " API_KEY <&9
+      printf '\n' >&9
+      exec 9>&-
+      API_KEY_NAME="$PROVIDER_KEY_NAME"
+      if [[ -z "$API_KEY" ]]; then
+        echo "No API key entered; installation stopped." >&2
+        exit 1
+      fi
+    fi
+    mkdir -p "$CONFIG_DIR"
+    chmod 700 "$CONFIG_DIR"
+    touch "$ENV_FILE"
+    chmod 600 "$ENV_FILE"
+    printf '%s=%s\n' "$API_KEY_NAME" "$API_KEY" >> "$ENV_FILE"
+    unset API_KEY
+    echo "Saved $API_KEY_NAME in $ENV_FILE with owner-only permissions."
+  fi
+fi
+
 SOURCE_DIR=""
 if [[ "$TARGET" != "uninstall" ]]; then
   LOCAL_DIR=""
