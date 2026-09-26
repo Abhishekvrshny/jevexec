@@ -1,0 +1,30 @@
+README.md
+  s_b71b20e6468ebc::t_473bb0a6ce14b3 81,93-96
+  s_babebf420e54c6::t_f4c3ca6c866cec 21-27
+src/cli.js
+  s_b71b20e6468ebc::t_26aed6ebffd560 83-91,94,120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "f2e3f34366df8026b101cf4fae82dc59392a9875",
+  "prompts": {},
+  "sessions": {
+    "s_b71b20e6468ebc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0dee6-6403-7451-a05c-4885b7ee6557",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishekvrshny@gmail.com>"
+    },
+    "s_babebf420e54c6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0ded7-c544-7421-b2e8-cc41999a04e7",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Abhishek Varshney <abhishekvrshny@gmail.com>"
+    }
+  }
+}
