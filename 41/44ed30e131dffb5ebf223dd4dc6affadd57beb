@@ -1,0 +1,19 @@
+src/cli.js
+  s_0b88e2165810cc::t_b29f531db7ce04 31-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "4144ed30e131dffb5ebf223dd4dc6affadd57beb",
+  "prompts": {},
+  "sessions": {
+    "s_0b88e2165810cc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0dee3-d5ba-74d3-8e12-bb35ac07a6f8",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishekvrshny@gmail.com>"
+    }
+  }
+}
