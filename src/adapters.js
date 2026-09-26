@@ -1,10 +1,12 @@
 export function codexDecision(result) {
-  if (result.decision === "allow") return null;
-  // Codex PreToolUse hooks can block but do not provide a native ask prompt.
-  const reason = result.decision === "ask"
-    ? `jevexec needs your review, but this Codex hook cannot ask. Action blocked: ${result.reason}`
-    : `jevexec ${result.decision}: ${result.reason}`;
-  return { hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: reason } };
+  if (result.decision !== "allow") return null;
+  return {
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "allow",
+      permissionDecisionReason: result.reason
+    }
+  };
 }
 
 export function claudeDecision(result) {

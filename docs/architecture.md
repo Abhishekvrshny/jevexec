@@ -23,8 +23,9 @@ file contents, credentials, and instruction files are excluded. Payloads over
 the initial bound fail closed instead of dropping guardrails. Requests retry
 once for HTTP 429 and 5xx responses under the same 15 second timeout.
 
-Codex hook `ask` results block with an explanation because this hook contract
-cannot present approval. Claude Code receives the native `ask` decision.
+For Codex, Jev `allow` results explicitly approve the tool call. Every other
+result returns no permission decision, leaving the action to Codex's configured
+permission flow. Claude Code receives native `ask` and `deny` decisions.
 
 This is a first slice, not the full recommended design. Semantic memory,
 project-scoped config, complete guardrail editing, host install

@@ -92,7 +92,7 @@ async function hooks(args) {
 
 function status() {
   const provider = new JevProvider({ settings: config.jev });
-  console.log(JSON.stringify({ config: configPath(), activeGuardrails: config.guardrails.length, provider: provider.provider, apiKeyEnv: provider.apiKeyEnv, apiKeyConfigured: Boolean(provider.apiKey), model: provider.model, codexAsk: "blocked: no native hook prompt", claudeAsk: "native permission prompt" }, null, 2));
+  console.log(JSON.stringify({ config: configPath(), activeGuardrails: config.guardrails.length, provider: provider.provider, apiKeyEnv: provider.apiKeyEnv, apiKeyConfigured: Boolean(provider.apiKey), model: provider.model, codex: "jev allow decisions approve; other decisions defer to Codex permissions", claudeAsk: "native permission prompt" }, null, 2));
 }
 
 async function audit(action, result) {

@@ -86,6 +86,10 @@ active rule count, provider key status, and model. Rules are stored in
 the jevexec runtime, saved rules, and audit log in place. You can reinstall the
 hooks later with `install.sh both`.
 
+For Codex, Jev-approved actions receive an explicit hook allow. Jev `ask`,
+`deny`, and `unavailable` results defer to Codex's configured permission flow,
+so Codex can prompt according to its normal settings.
+
 ## Development
 
 ```sh
