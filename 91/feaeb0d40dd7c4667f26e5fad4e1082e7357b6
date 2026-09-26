@@ -1,0 +1,31 @@
+src/jev.js
+  s_84f9fd2b60512d::t_345d7beda2061e 173,178
+  s_84f9fd2b60512d::t_61ebda7502b249 38,60-61,63-69,84,88-89,93-95,148-153
+  s_84f9fd2b60512d::t_f0375bd0e09e1b 183
+  s_84f9fd2b60512d::t_1445b989317ee1 39,62,70-73,98-104,107,109,112
+  s_84f9fd2b60512d::t_77919d1939a665 154-155
+src/cli.js
+  s_84f9fd2b60512d::t_35ad0a5cdfe80d 114-116,118-121
+  s_84f9fd2b60512d::t_68ffe95c35836c 9,117
+  s_84f9fd2b60512d::t_0eb1a2574607ee 44-45,47,54-58,109,111-113,122-125
+src/core.js
+  s_84f9fd2b60512d::t_efcb0746e76be4 65,67-71,73-77,80-83
+README.md
+  s_84f9fd2b60512d::t_d4e7890d6621f2 112-116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "91feaeb0d40dd7c4667f26e5fad4e1082e7357b6",
+  "prompts": {},
+  "sessions": {
+    "s_84f9fd2b60512d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0df29-1568-7241-9c75-62db0b556acc",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishekvrshny@gmail.com>"
+    }
+  }
+}
