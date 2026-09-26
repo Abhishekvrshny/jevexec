@@ -1,0 +1,48 @@
+.gitignore
+  h_9593b51f6c4d75 1-4
+LICENSE
+  h_9593b51f6c4d75 1-21
+README.md
+  h_9593b51f6c4d75 1-73
+bin/jevexec
+  h_9593b51f6c4d75 1-2
+docs/architecture.md
+  h_9593b51f6c4d75 1-23
+hooks/claude.json
+  h_9593b51f6c4d75 1-17
+hooks/codex.json
+  h_9593b51f6c4d75 1-17
+install.sh
+  h_9593b51f6c4d75 1-188
+package.json
+  h_9593b51f6c4d75 1-14
+src/adapters.js
+  h_9593b51f6c4d75 1-16
+src/cli.js
+  h_9593b51f6c4d75 1-114
+src/config.js
+  h_9593b51f6c4d75 1-23
+src/core.js
+  h_9593b51f6c4d75 1-77
+src/jev.js
+  h_9593b51f6c4d75 1-129
+src/types.js
+  h_9593b51f6c4d75 1-12
+src/updater.js
+  h_9593b51f6c4d75 1-98
+test/core.test.js
+  h_9593b51f6c4d75 1-36
+test/jev.test.js
+  h_9593b51f6c4d75 1-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "90ed9e3b6443ba0628cbf82214dd0dd9232c4c87",
+  "prompts": {},
+  "humans": {
+    "h_9593b51f6c4d75": {
+      "author": "Abhishek Varshney <abhishekvrshny@gmail.com>"
+    }
+  }
+}
