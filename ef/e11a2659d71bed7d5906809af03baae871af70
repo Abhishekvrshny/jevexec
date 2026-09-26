@@ -1,0 +1,87 @@
+src/jev.js
+  s_7a4587edb07711::t_c1cbacaadb9139 12,17
+  s_7a4587edb07711::t_bcec99f749db5b 34,36,39,41-42,59,69
+  s_7a4587edb07711::t_574d5298e48c6f 5-9,32,67,70-73,77,80-81
+  s_7a4587edb07711::t_f620064069523e 1-2,21,40,43-58,60-65,82-96,98
+  s_7a4587edb07711::t_d63703b1aa774d 26,28-29,119-128
+  s_7a4587edb07711::t_60da139f24589d 3-4,10-11,13-16,18-20,22-25,27,30-31,33,35,37-38,66,68,74-76,78-79,97,99-118,129
+README.md
+  s_7a4587edb07711::t_cfb95fcb0b8d7c 40-46
+  s_7a4587edb07711::t_e74911fe0ef088 36-37,79-81
+  s_7a4587edb07711::t_31deff77a66a2b 47,49,51-53,55-75,84-86
+  s_7a4587edb07711::t_60da139f24589d 1-33,38-39,48,50,54,76-78,82-83,87-93
+  s_7a4587edb07711::t_025ebf114c8e5c 34-35
+.gitignore
+  s_7a4587edb07711::t_60da139f24589d 1-4
+src/cli.js
+  s_7a4587edb07711::t_bcec99f749db5b 79
+  s_7a4587edb07711::t_d63703b1aa774d 3-4,39,48,82-83,85-94
+  s_7a4587edb07711::t_e74911fe0ef088 84
+  s_7a4587edb07711::t_60da139f24589d 1-2,5-38,40-47,49-78,80-81,95-99
+src/adapters.js
+  s_7a4587edb07711::t_60da139f24589d 1-6,8-16
+  s_7a4587edb07711::t_d63703b1aa774d 7
+package.json
+  s_7a4587edb07711::t_c1cbacaadb9139 8
+  s_7a4587edb07711::t_60da139f24589d 1-7,9-11
+src/types.js
+  s_7a4587edb07711::t_f620064069523e 3-4
+  s_7a4587edb07711::t_60da139f24589d 1-2,5-12
+hooks/codex.json
+  s_7a4587edb07711::t_60da139f24589d 1-17
+install.sh
+  s_7a4587edb07711::t_bfc58f0e8adfdc 1-150
+  s_59093eae136013::t_45cdd5a4e9c2bb 151-161
+test/jev.test.js
+  s_7a4587edb07711::t_c1cbacaadb9139 1-3,5-16,18,20-22,24-26,29-37,39,51
+  s_7a4587edb07711::t_bcec99f749db5b 19
+  s_7a4587edb07711::t_c361a09b644413 40
+  s_7a4587edb07711::t_574d5298e48c6f 17,28,38,57-65
+  s_7a4587edb07711::t_82f219fe330152 23,27
+  s_7a4587edb07711::t_622ac1ab096226 52-56,66
+  s_7a4587edb07711::t_26c73586688810 4,41-50
+docs/architecture.md
+  s_7a4587edb07711::t_e74911fe0ef088 1-12,14,17-21,23
+  s_7a4587edb07711::t_bcec99f749db5b 13,15-16,22
+src/config.js
+  s_7a4587edb07711::t_60da139f24589d 1-23
+hooks/claude.json
+  s_7a4587edb07711::t_60da139f24589d 1-17
+test/core.test.js
+  s_7a4587edb07711::t_82f219fe330152 19
+  s_7a4587edb07711::t_c1cbacaadb9139 1-18,20-36
+src/core.js
+  s_7a4587edb07711::t_d63703b1aa774d 23,27-30,32-36
+  s_7a4587edb07711::t_bcec99f749db5b 52
+  s_7a4587edb07711::t_60da139f24589d 1,3-7,10-14,16-22,25-26,37-51,53-63,67-77
+  s_7a4587edb07711::t_f620064069523e 2,64-66
+  s_7a4587edb07711::t_e74911fe0ef088 8-9,15,24,31
+LICENSE
+  s_59093eae136013::t_514948c9b4a52b 1-21
+src/updater.js
+  s_59093eae136013::t_20c95364534673 1-98
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "efe11a2659d71bed7d5906809af03baae871af70",
+  "prompts": {},
+  "sessions": {
+    "s_59093eae136013": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0dc5f-e40e-7850-ab98-df490d2dec33",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishek.varshney@jiostar.com>"
+    },
+    "s_7a4587edb07711": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0dbb7-daea-7320-b2e7-c6a4bd9fc820",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishek.varshney@jiostar.com>"
+    }
+  }
+}
