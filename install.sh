@@ -11,7 +11,7 @@ usage() {
   cat <<'EOF'
 Usage: install.sh [codex|claude|both|uninstall]
 
-Install jevexec and register its PreToolUse hook for one or both hosts.
+Install jevexec and register its Codex PermissionRequest and Claude PreToolUse hooks.
 Set JEVEXEC_INSTALL_DIR to change where the checkout is stored.
 Set JEVEXEC_BIN_DIR to change where the jevexec command is installed.
 EOF
@@ -188,9 +188,7 @@ if not isinstance(data, dict):
 hooks = data.setdefault("hooks", {})
 if not isinstance(hooks, dict):
     raise SystemExit(f"Cannot safely update {settings}: 'hooks' must be an object.")
-entries = hooks.setdefault("PreToolUse", [])
-if not isinstance(entries, list):
-    raise SystemExit(f"Cannot safely update {settings}: 'PreToolUse' must be an array.")
+event_names = ["PreToolUse", "PermissionRequest"] if host == "codex" else ["PreToolUse"]
 
 def is_jevexec(hook):
     if not isinstance(hook, dict):
@@ -199,23 +197,33 @@ def is_jevexec(hook):
     status = hook.get("statusMessage")
     return isinstance(command, str) and isinstance(status, str) and f"hook {host}" in command and status.startswith("jevexec:")
 
-remaining_entries = []
-for entry in entries:
-    if not isinstance(entry, dict) or not isinstance(entry.get("hooks"), list):
-        remaining_entries.append(entry)
-        continue
-    original_handlers = entry["hooks"]
-    entry["hooks"] = [hook for hook in original_handlers if not is_jevexec(hook)]
-    if entry["hooks"] or len(entry["hooks"]) == len(original_handlers):
-        remaining_entries.append(entry)
-entries[:] = remaining_entries
+for event_name in event_names:
+    entries = hooks.get(event_name, [])
+    if not isinstance(entries, list):
+        raise SystemExit(f"Cannot safely update {settings}: '{event_name}' must be an array.")
+    remaining_entries = []
+    for entry in entries:
+        if not isinstance(entry, dict) or not isinstance(entry.get("hooks"), list):
+            remaining_entries.append(entry)
+            continue
+        original_handlers = entry["hooks"]
+        entry["hooks"] = [hook for hook in original_handlers if not is_jevexec(hook)]
+        if entry["hooks"] or len(entry["hooks"]) == len(original_handlers):
+            remaining_entries.append(entry)
+    entries[:] = remaining_entries
+
 if action != "uninstall":
     command = f"node {shlex.quote(str(source / 'src' / 'cli.js'))} hook {host}"
     handler = {"type": "command", "command": command, "timeout": 20, "statusMessage": f"jevexec: assessing action"}
+    event_name = "PermissionRequest" if host == "codex" else "PreToolUse"
+    entries = hooks.setdefault(event_name, [])
+    if not isinstance(entries, list):
+        raise SystemExit(f"Cannot safely update {settings}: '{event_name}' must be an array.")
     entries.append({"matcher": ".*", "hooks": [handler]})
 
-if not entries:
-    hooks.pop("PreToolUse", None)
+for event_name in event_names:
+    if not hooks.get(event_name):
+        hooks.pop(event_name, None)
 if not hooks:
     data.pop("hooks", None)
 

@@ -111,15 +111,17 @@ active rule count, provider key status, and model. Rules are stored in
 `${XDG_CONFIG_HOME:-~/.config}/jevexec/config.json`; audit entries are written to
 `audit.jsonl` beside it.
 
-`hooks install` registers jevexec's `PreToolUse` hook for both Codex and Claude;
-pass `codex` or `claude` to install for one host. `hooks uninstall` removes the
-hooks from both hosts. These commands keep the jevexec runtime, saved rules, and
-audit log in place.
+`hooks install` registers a `PermissionRequest` hook for Codex and a
+`PreToolUse` hook for Claude; pass `codex` or `claude` to install for one host.
+`hooks uninstall` removes the hooks from both hosts. These commands keep the
+jevexec runtime, saved rules, and audit log in place.
 
-For Codex, Jev-approved actions produce no hook output, allowing Codex to
-continue with its normal permission flow. Jev `ask`, `deny`, and `unavailable`
-results explicitly delegate to Codex so it can apply its configured permission
-flow.
+For Codex, Jev-approved permission requests return an allow decision and
+proceed without the normal approval prompt. Jev `ask`, `deny`, and
+`unavailable` results produce no decision, so Codex continues with its normal
+approval prompt. The Codex hook runs at `PermissionRequest`, which only fires
+when Codex is about to ask for approval; it does not assess tools that already
+proceed without approval.
 
 ## Development
 
