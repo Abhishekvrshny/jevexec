@@ -146,6 +146,8 @@ node bin/jevexec status
 node bin/jevexec check 'git status'
 ```
 
+<!-- Temporary README change for branch workflow verification. -->
+
 Tests mock provider requests and need no API key. Manual checks for uncertain
 commands use Jev and need the selected provider's API key.
 
