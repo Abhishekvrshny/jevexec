@@ -1,0 +1,30 @@
+hooks/codex.json
+  s_2dff2e89618926::t_78684d94528403 3
+src/cli.js
+  s_2dff2e89618926::t_1a8bdf4a5f2f0c 103
+src/adapters.js
+  s_2dff2e89618926::t_78684d94528403 2,5-6
+README.md
+  s_2dff2e89618926::t_1a8bdf4a5f2f0c 114-117
+  s_2dff2e89618926::t_78684d94528403 119-124
+  s_2dff2e89618926::t_f9689f45af2e6f 118
+install.sh
+  s_2dff2e89618926::t_1a8bdf4a5f2f0c 14
+  s_2dff2e89618926::t_7aef87c9ea5df9 191,200-214,218-221,224-226
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "e7f39216672de9746b57fd9b0d11d18594820080",
+  "prompts": {},
+  "sessions": {
+    "s_2dff2e89618926": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0df14-ea58-7560-a332-d8077d582515",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishekvrshny@gmail.com>"
+    }
+  }
+}
