@@ -1,0 +1,35 @@
+src/cli.js
+  s_273460fbe13f46::t_30f60d00703502 95
+  s_273460fbe13f46::t_c9a40eab47e5f9 41,50,75,94
+src/jev.js
+  s_273460fbe13f46::t_c9a40eab47e5f9 5-18,26-33,39,41,127-130
+  s_273460fbe13f46::t_a95a81cfa84c5f 40
+  s_273460fbe13f46::t_724b9340d6c848 131-132
+install.sh
+  s_273460fbe13f46::t_30f60d00703502 185-189
+src/config.js
+  s_273460fbe13f46::t_c9a40eab47e5f9 12-20,22,29
+README.md
+  s_273460fbe13f46::t_30f60d00703502 41-45,60-61
+  s_273460fbe13f46::t_982504f3493a82 11,29-30,33,37-40,46-59,62-63
+docs/architecture.md
+  s_273460fbe13f46::t_982504f3493a82 10-11,13-24
+AGENTS.md
+  s_273460fbe13f46::t_3b571a2873fc8a 1-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "0003c082b3128d40bdbabd825114b57f67541b50",
+  "prompts": {},
+  "sessions": {
+    "s_273460fbe13f46": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0dc83-804b-7b63-9266-add8440a9d69",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishekvrshny@gmail.com>"
+    }
+  }
+}
