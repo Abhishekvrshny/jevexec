@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${PLUGIN_ROOT}/src/cli.js\" hook claude",
+            "timeout": 20,
+            "statusMessage": "jevexec: assessing action"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "jevexec",
+  "version": "0.1.0",
+  "private": true,
+  "bin": {
+    "jevexec": "./bin/jevexec"
+  },
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "check": "node --check src/cli.js && node --check src/core.js && node --check src/jev.js && node --check src/adapters.js && node --check src/config.js && node --check src/types.js",
+    "test": "node --test"
+  }
+}
