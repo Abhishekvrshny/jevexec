@@ -1,0 +1,19 @@
+README.md
+  s_ef93562e5ada68::t_c182a5842fcbe7 149-150
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "eb0e87cfa684f5df9cf48745841b4adb12239a91",
+  "prompts": {},
+  "sessions": {
+    "s_ef93562e5ada68": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0df2f-52d9-7ee2-a660-95ac562d2a2c",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishekvrshny@gmail.com>"
+    }
+  }
+}
