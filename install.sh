@@ -47,7 +47,20 @@ if [[ "$TARGET" != "uninstall" ]]; then
     mkdir -p "$(dirname -- "$INSTALL_DIR")"
     if [[ -d "$INSTALL_DIR/.git" ]]; then
       git -C "$INSTALL_DIR" fetch --depth 1 origin "$BRANCH"
-      git -C "$INSTALL_DIR" merge --ff-only FETCH_HEAD
+      if git -C "$INSTALL_DIR" merge-base HEAD FETCH_HEAD >/dev/null 2>&1; then
+        git -C "$INSTALL_DIR" merge --ff-only FETCH_HEAD
+      else
+        if [[ -n "$(git -C "$INSTALL_DIR" status --porcelain --untracked-files=all)" ]]; then
+          echo "Cannot update jevexec checkout with unrelated history because it has local changes: $INSTALL_DIR" >&2
+          echo "Preserve or remove those changes, then run the installer again." >&2
+          exit 1
+        fi
+
+        BACKUP_REF="refs/jevexec/backup/$(date +%Y%m%d%H%M%S)-$$"
+        git -C "$INSTALL_DIR" update-ref "$BACKUP_REF" HEAD
+        git -C "$INSTALL_DIR" reset --hard FETCH_HEAD
+        echo "Updated jevexec after an upstream history rewrite; previous revision is preserved at $BACKUP_REF."
+      fi
     elif [[ -e "$INSTALL_DIR" ]]; then
       echo "Install path exists but is not a jevexec Git checkout: $INSTALL_DIR" >&2
       exit 1
