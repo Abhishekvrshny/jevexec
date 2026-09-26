@@ -1,0 +1,19 @@
+.gitignore
+  s_18f3b933d308d1::t_9ff8c2f1c7061e 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "defd6d732c18e3f597836178e5b992d53d6a7ff4",
+  "prompts": {},
+  "sessions": {
+    "s_18f3b933d308d1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0deac-6811-75e3-8ba9-ea6a8caf013f",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishekvrshny@gmail.com>"
+    }
+  }
+}
