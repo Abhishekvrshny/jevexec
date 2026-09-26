@@ -28,7 +28,8 @@ try {
 async function hook(host) {
   if (host !== "codex" && host !== "claude") throw new Error("Usage: jevexec hook <codex|claude>");
   await startUpdateCheck();
-  const raw = await readFile(0, "utf8");
+  let raw = "";
+  for await (const chunk of process.stdin) raw += chunk;
   const input = JSON.parse(raw);
   const action = {
     host,
