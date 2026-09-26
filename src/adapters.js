@@ -1,10 +1,9 @@
 export function codexDecision(result) {
-  if (result.decision !== "allow") return null;
+  if (result.decision === "allow") return null;
   return {
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
-      permissionDecision: "allow",
-      permissionDecisionReason: result.reason
+      permissionDecision: "delegate"
     }
   };
 }

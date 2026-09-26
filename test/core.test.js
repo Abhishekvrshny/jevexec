@@ -29,10 +29,10 @@ test("classifier errors remain unavailable", async () => {
   assert.equal(result.decision, "unavailable");
 });
 
-test("Codex allows Jev-approved results and defers other decisions; Claude uses native ask", () => {
+test("Codex passes Jev-approved results through and delegates other decisions; Claude uses native ask", () => {
   const approved = { decision: "allow", reason: "Approved" };
   const review = { decision: "ask", reason: "Review this" };
-  assert.equal(codexDecision(approved).hookSpecificOutput.permissionDecision, "allow");
-  assert.equal(codexDecision(review), null);
+  assert.equal(codexDecision(approved), null);
+  assert.equal(codexDecision(review).hookSpecificOutput.permissionDecision, "delegate");
   assert.equal(claudeDecision(review).hookSpecificOutput.permissionDecision, "ask");
 });

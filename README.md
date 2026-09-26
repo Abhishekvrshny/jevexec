@@ -116,9 +116,10 @@ pass `codex` or `claude` to install for one host. `hooks uninstall` removes the
 hooks from both hosts. These commands keep the jevexec runtime, saved rules, and
 audit log in place.
 
-For Codex, Jev-approved actions receive an explicit hook allow. Jev `ask`,
-`deny`, and `unavailable` results defer to Codex's configured permission flow,
-so Codex can prompt according to its normal settings.
+For Codex, Jev-approved actions produce no hook output, allowing Codex to
+continue with its normal permission flow. Jev `ask`, `deny`, and `unavailable`
+results explicitly delegate to Codex so it can apply its configured permission
+flow.
 
 ## Development
 
