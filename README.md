@@ -161,3 +161,5 @@ HOME="$tmp_home" XDG_CONFIG_HOME="$tmp_home/.config" \
   JEVEXEC_BIN_DIR="$tmp_home/.local/bin" ./install.sh both
 rm -rf -- "$tmp_home"
 ```
+
+<!-- Second temporary README change for branch workflow verification. -->
