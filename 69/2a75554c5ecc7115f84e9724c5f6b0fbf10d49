@@ -1,0 +1,19 @@
+install.sh
+  s_b71b20e6468ebc::t_ef8bd7cf9a23c6 50-63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "692a75554c5ecc7115f84e9724c5f6b0fbf10d49",
+  "prompts": {},
+  "sessions": {
+    "s_b71b20e6468ebc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0dee6-6403-7451-a05c-4885b7ee6557",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishekvrshny@gmail.com>"
+    }
+  }
+}
