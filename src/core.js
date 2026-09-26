@@ -62,15 +62,25 @@ export function combineSignals(signals, thresholds = {}, action = {}) {
   return assessment("allow", "Jev found low risk and no explicit user-rule conflict.", "jev");
 }
 
-export async function assess(action, provider, { thresholds } = {}) {
+export async function assess(action, provider, { thresholds, trace = [] } = {}) {
   const local = assessLocal(action);
-  if (local) return local;
+  if (local) {
+    trace.push({ step: "local_assessment", result: local });
+    trace.push({ step: "assessment_complete", result: local });
+    return local;
+  }
   try {
-    const signals = await provider.evaluate(action);
-    return combineSignals(signals, thresholds, action);
+    const signals = await provider.evaluate(action, { trace });
+    trace.push({ step: "jev_signals", result: signals });
+    const result = combineSignals(signals, thresholds, action);
+    trace.push({ step: "assessment_complete", result });
+    return result;
   } catch (error) {
     const reason = error instanceof SafeAssessmentError ? error.message : "Jev request failed or timed out.";
-    return assessment("unavailable", reason, "jev-error");
+    const result = assessment("unavailable", reason, "jev-error");
+    trace.push({ step: "assessment_error", error: reason, result });
+    trace.push({ step: "assessment_complete", result });
+    return result;
   }
 }
 

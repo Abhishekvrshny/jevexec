@@ -109,7 +109,11 @@ The runtime is installed in `~/.local/share/jevexec` by default. Set
 `check` assesses a command but never executes it. `status` shows the config path,
 active rule count, provider key status, and model. Rules are stored in
 `${XDG_CONFIG_HOME:-~/.config}/jevexec/config.json`; audit entries are written to
-`audit.jsonl` beside it.
+`audit.jsonl` beside it. Each hook or `check` invocation adds one JSONL record
+with a request ID, the redacted request parameters, the JEV request and response,
+HTTP retry/status details, intermediate assessment results, the final assessment,
+and the response returned to the hook (or CLI). Credentials are redacted and
+the audit file is restricted to owner read/write permissions.
 
 `hooks install` registers a `PermissionRequest` hook for Codex and a
 `PreToolUse` hook for Claude; pass `codex` or `claude` to install for one host.

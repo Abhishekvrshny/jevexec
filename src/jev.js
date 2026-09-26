@@ -35,7 +35,8 @@ export class JevProvider {
     this.fetchImpl = fetchImpl;
   }
 
-  async evaluate(action) {
+  async evaluate(action, { trace = [] } = {}) {
+    trace.push({ step: "jev_provider", provider: this.provider, model: this.model, timeoutMs: this.timeoutMs });
     if (!this.providerConfig) throw new SafeAssessmentError(`Unsupported JEV_PROVIDER '${this.provider}'; choose openrouter or typesafe.`);
     if (!this.apiKey) throw new SafeAssessmentError(`Missing API key: set ${this.apiKeyEnv} or JEV_API_KEY in the environment running jevexec.`);
     const endpoint = this.providerConfig.endpoint(this.baseUrl);
@@ -56,7 +57,20 @@ export class JevProvider {
       }]))
     };
     const payload = JSON.stringify({ model: this.model, state, questions });
-    if (payload.length > 32_000) throw new SafeAssessmentError("Action and guardrails exceed Jev's request limit; no guardrails were omitted.");
+    trace.push({
+      step: "jev_request",
+      sent: payload.length <= 32_000,
+      request: redact({
+        method: "POST",
+        endpoint,
+        headers: { "content-type": "application/json", authorization: "Bearer [redacted]" },
+        payload: JSON.parse(payload)
+      })
+    });
+    if (payload.length > 32_000) {
+      trace.push({ step: "jev_request_rejected", reason: "Payload exceeds Jev's 32,000 character request limit." });
+      throw new SafeAssessmentError("Action and guardrails exceed Jev's request limit; no guardrails were omitted.");
+    }
     const signal = AbortSignal.timeout(this.timeoutMs);
     let response;
     try {
@@ -67,21 +81,35 @@ export class JevProvider {
           body: payload,
           signal
         });
+        trace.push({ step: "jev_http_attempt", attempt: attempt + 1, status: response.status, ok: response.ok });
         if (response.ok || (response.status !== 429 && response.status < 500) || attempt === 1) break;
       }
     } catch {
+      const reason = signal.aborted ? "Jev request timed out." : "Could not connect to Jev; check the endpoint and network.";
+      trace.push({ step: "jev_transport_error", error: reason });
       throw new SafeAssessmentError(signal.aborted ? "Jev request timed out." : "Could not connect to Jev; check the endpoint and network.");
     }
     if (!response.ok) {
-      const detail = safeProviderDetail(await response.text());
+      const responseText = await response.text();
+      trace.push({ step: "jev_response", status: response.status, body: safeResponseBody(responseText) });
+      const detail = safeProviderDetail(responseText);
       throw new SafeAssessmentError(`Jev returned HTTP ${response.status}${detail ? `: ${detail}` : "."}`);
+    }
+    let responseText;
+    try {
+      responseText = await response.text();
+    } catch {
+      trace.push({ step: "jev_response_error", status: response.status, error: "Could not read Jev response body." });
+      throw new SafeAssessmentError("Could not read Jev response body.");
     }
     let body;
     try {
-      body = await response.json();
+      body = JSON.parse(responseText);
     } catch {
+      trace.push({ step: "jev_response", status: response.status, body: safeResponseBody(responseText), error: "Jev returned invalid JSON." });
       throw new SafeAssessmentError("Jev returned invalid JSON.");
     }
+    trace.push({ step: "jev_response", status: response.status, body: safeResponseBody(responseText) });
     const answers = body?.answers ?? body?.results;
     const riskScore = answers?.risk?.score;
     const approval = answers?.approval?.noul ?? answers?.approval?.probability;
@@ -117,6 +145,14 @@ function safeProviderDetail(body) {
   return String(redact(detail)).replace(/\s+/g, " ").slice(0, 240);
 }
 
+function safeResponseBody(body) {
+  try {
+    return redact(JSON.parse(body));
+  } catch {
+    return redact(body.slice(0, 8_000));
+  }
+}
+
 export function decisionsEndpoint(baseUrl) {
   const trimmed = baseUrl.replace(/\/+$/, "");
   if (trimmed.endsWith("/api/alpha/decisions")) return trimmed;
@@ -134,16 +170,17 @@ export function redact(value) {
   if (typeof value === "string") {
     return value
       .replace(/(Bearer\s+)[^\s,;]+/gi, "$1[redacted]")
+      .replace(/([?&](?:api[-_]?key|access_token|token|password|secret|authorization)=)[^&#\s]+/gi, "$1[redacted]")
       .replace(/\b(?:sk-or-v1|sk|key|token)[-_][A-Za-z0-9._-]{8,}/gi, "[redacted]");
   }
   if (Array.isArray(value)) return value.map(redact);
   if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, /key|token|secret|password/i.test(key) ? "[redacted]" : redact(item)]));
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, /key|token|secret|password|credential|authorization/i.test(key) ? "[redacted]" : redact(item)]));
   }
   return value;
 }
 
-function safeInput(input) {
+export function safeInput(input) {
   if (typeof input === "string") return redact(input.slice(0, 4000));
   if (!input || typeof input !== "object" || Array.isArray(input)) return undefined;
   const allowed = new Set(["command", "cmd", "script", "path", "paths", "file_path", "cwd", "url", "query", "pattern", "method", "host"]);

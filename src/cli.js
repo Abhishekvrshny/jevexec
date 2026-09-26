@@ -6,7 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { assess } from "./core.js";
 import { configPath, readConfig, writeConfig } from "./config.js";
-import { JevProvider } from "./jev.js";
+import { JevProvider, redact } from "./jev.js";
 import { claudeDecision, codexDecision } from "./adapters.js";
 import { startUpdateCheck } from "./updater.js";
 import { loadHookEnvironment } from "./env.js";
@@ -41,18 +41,21 @@ async function hook(host) {
     userIntent: input.user_prompt,
     guardrails: config.guardrails
   };
-  const result = await assess(action, new JevProvider({ settings: config.jev }));
-  await audit(action, result);
+  const trace = [];
+  const result = await assess(action, new JevProvider({ settings: config.jev }), { trace });
   const output = host === "codex" ? codexDecision(result) : claudeDecision(result);
+  await audit(action, result, { trace, responseToHook: output });
   if (output) process.stdout.write(`${JSON.stringify(output)}\n`);
 }
 
 async function check(commandText) {
   if (!commandText) throw new Error("Usage: jevexec check <command>");
   const action = { host: "cli", tool: "shell", input: { command: commandText }, cwd: process.cwd(), guardrails: config.guardrails };
-  const result = await assess(action, new JevProvider({ settings: config.jev }));
-  await audit(action, result);
-  console.log(JSON.stringify(result, null, 2));
+  const trace = [];
+  const result = await assess(action, new JevProvider({ settings: config.jev }), { trace });
+  const output = JSON.stringify(result, null, 2);
+  await audit(action, result, { trace, responseToHook: output });
+  console.log(output);
   if (result.decision === "deny" || result.decision === "unavailable") process.exitCode = 2;
 }
 
@@ -103,9 +106,23 @@ function status() {
   console.log(JSON.stringify({ config: configPath(), activeGuardrails: config.guardrails.length, provider: provider.provider, apiKeyEnv: provider.apiKeyEnv, apiKeyConfigured: Boolean(provider.apiKey), model: provider.model, codex: "explicit allow/deny decisions are applied; risk and unavailable results defer to Codex permissions", claude: "explicit denies are applied; risk and unavailable results use the native permission prompt" }, null, 2));
 }
 
-async function audit(action, result) {
+async function audit(action, result, { trace = [], responseToHook = null } = {}) {
   const path = join(dirname(configPath()), "audit.jsonl");
-  const entry = JSON.stringify({ at: new Date().toISOString(), host: action.host, tool: action.tool, decision: result.decision, source: result.source, reason: result.reason.slice(0, 240) });
+  const entry = JSON.stringify(redact({
+    id: randomUUID(),
+    at: new Date().toISOString(),
+    request: {
+      host: action.host,
+      tool: action.tool,
+      parameters: action.input,
+      cwd: action.cwd,
+      userIntent: typeof action.userIntent === "string" ? action.userIntent.slice(0, 1000) : undefined,
+      guardrails: action.guardrails
+    },
+    trace,
+    assessment: result,
+    responseToHook
+  }));
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
   await appendFile(path, `${entry}\n`, { mode: 0o600 });
   await chmod(path, 0o600);
