@@ -92,11 +92,26 @@ so Codex can prompt according to its normal settings.
 
 ## Development
 
+Requires Node.js 20 or newer. No dependency install is needed.
+`bin/jevexec` is a Node.js launcher for `src/cli.js`, not a compiled binary.
+
 ```sh
 npm run check
 npm test
-./install.sh codex   # or claude, or both
+node bin/jevexec status
+node bin/jevexec check 'git status'
 ```
 
-Local `check` handles only simple known read-only commands and hard-deny cases.
-Other actions are sent to Jev; if Jev is unavailable, the action is held.
+Tests mock provider requests and need no API key. Manual checks for uncertain
+commands use Jev and need the selected provider's API key.
+
+To try hook installation without changing your host settings, use a temporary
+home directory:
+
+```sh
+tmp_home="$(mktemp -d)"
+HOME="$tmp_home" XDG_CONFIG_HOME="$tmp_home/.config" \
+  JEVEXEC_SOURCE_DIR="$PWD" JEVEXEC_INSTALL_DIR="$tmp_home/.local/share/jevexec" \
+  JEVEXEC_BIN_DIR="$tmp_home/.local/bin" ./install.sh both
+rm -rf -- "$tmp_home"
+```
