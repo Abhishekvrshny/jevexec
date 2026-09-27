@@ -1,0 +1,27 @@
+src/monitor-ui.js
+  s_6f2c6239784f3a::t_543c11dcb5d2da 95,121
+src/monitor-data.js
+  s_6f2c6239784f3a::t_409cbe1bbaa763 52-64,80,85-106,139-145,148-156
+  s_6f2c6239784f3a::t_2d4e866e488f3e 146-147
+  s_6f2c6239784f3a::t_46f719a3717a59 157
+src/jev.js
+  s_6f2c6239784f3a::t_54e294e629317a 203-204
+  s_6f2c6239784f3a::t_f1988a60dcd2bb 192-197,202
+  s_6f2c6239784f3a::t_f6da3ac3668f9d 205-206
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "cd81c8fb1d9ef881f7f2bb010233315c43ffde69",
+  "prompts": {},
+  "sessions": {
+    "s_6f2c6239784f3a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0e3a9-6e52-7d51-a462-b2f529be8102",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishekvrshny@gmail.com>"
+    }
+  }
+}
