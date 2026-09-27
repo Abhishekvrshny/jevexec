@@ -1,0 +1,50 @@
+docs/architecture.md
+  s_b012919b401830::t_2254c07a320d90 3-8,20-27,31-40,42-45
+  s_b012919b401830::t_5c15452400b41d 47-48
+src/jev.js
+  s_b012919b401830::t_c59c59d8503933 38,51,54,56-67,127-131,136-139,142
+src/adapters.js
+  s_b012919b401830::t_a55b728773350b 1-2,4-11,23-35
+  s_b012919b401830::t_8c6b9aaa5ad16e 36
+  s_b012919b401830::t_8d79c04663e6d6 3
+test/core.test.js
+  s_b012919b401830::t_6d5bcbbfdab799 23
+  s_b012919b401830::t_27b22179a63165 3,33,36,38-40,42-59,61-62
+  s_b012919b401830::t_8c8423dc6bf7f6 24-25
+  s_b012919b401830::t_42f99ccbc3a100 35
+  s_b012919b401830::t_8d1500a53cf857 37
+  s_b012919b401830::t_411c40015a031a 60,63
+install.sh
+  s_b012919b401830::t_fb3f3ddaf6feb3 14,191,218-222
+test/jev.test.js
+  s_b012919b401830::t_769705377fa700 20-21,30-47
+src/core.js
+  s_b012919b401830::t_e4b05d2b63437e 45-55,99-103,112-113,115-116,118
+  s_b012919b401830::t_7516a0885abd13 71-98,104,106-111,114,117,119-122,130
+  s_b012919b401830::t_f9c3a6e19c2e3e 105
+hooks/claude.json
+  s_b012919b401830::t_39a384696dc4d9 11-24
+src/cli.js
+  s_b012919b401830::t_661870987fe185 36-40,50-54,113,116,123
+hooks/codex.json
+  s_b012919b401830::t_9bd514d3b7acc0 3-15,24
+README.md
+  s_b012919b401830::t_4a1f20a086ffd9 123-141
+  s_b012919b401830::t_e206b70059d736 118-119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "9ff1aff31520c6ac6740e51582106b5d890ca9fe",
+  "prompts": {},
+  "sessions": {
+    "s_b012919b401830": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0e314-59c7-77c2-b943-b974cf41f262",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Abhishek Varshney <abhishekvrshny@gmail.com>"
+    }
+  }
+}
