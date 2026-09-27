@@ -10,6 +10,7 @@ import { JevProvider, redact } from "./jev.js";
 import { claudeDecision, codexDecision } from "./adapters.js";
 import { startUpdateCheck } from "./updater.js";
 import { loadHookEnvironment } from "./env.js";
+import { monitor } from "./monitor.js";
 
 const [command, ...args] = process.argv.slice(2);
 const config = await readConfig();
@@ -19,6 +20,7 @@ try {
   else if (command === "check") await check(args.join(" "));
   else if (command === "rules") await rules(args);
   else if (command === "hooks") await hooks(args);
+  else if (command === "monitor") await monitor(args);
   else if (command === "status") status();
   else usage();
 } catch (error) {
@@ -144,5 +146,5 @@ async function audit(action, result, { trace = [], hookEventName, responseToHook
 }
 
 function usage() {
-  console.log("jevexec hook <codex|claude> | check <command> | hooks <install [codex|claude|both]|uninstall> | rules <list|add|remove|clear> | status");
+  console.log("jevexec hook <codex|claude> | check <command> | hooks <install [codex|claude|both]|uninstall> | rules <list|add|remove|clear> | monitor | status");
 }

@@ -6,9 +6,18 @@
     "jevexec": "./bin/jevexec"
   },
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "check": "node --check src/cli.js && node --check src/core.js && node --check src/jev.js && node --check src/adapters.js && node --check src/config.js && node --check src/types.js",
+    "check": "node --check src/cli.js && node --check src/core.js && node --check src/jev.js && node --check src/adapters.js && node --check src/config.js && node --check src/types.js && node --check src/monitor-data.js && node --check src/monitor-ui.js && node --check src/monitor.js",
     "test": "node --test"
+  },
+  "dependencies": {
+    "ink": "^6.8.0",
+    "react": "^19.3.0"
+  },
+  "devDependencies": {
+    "ink-testing-library": "^4.0.0"
   }
 }

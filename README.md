@@ -99,9 +99,17 @@ jevexec rules list
 jevexec rules add 'Do not push to production'
 jevexec rules remove <id>
 jevexec rules clear
+jevexec monitor
 jevexec hooks install [codex|claude|both]
 jevexec hooks uninstall
 ```
+
+`monitor` opens a live terminal dashboard for the retained audit history and
+new completed hook or `check` events. Use the arrow keys or `j`/`k` to select
+events, Enter to inspect an event, Escape to return, and `q` to quit. The detail
+view includes the redacted request, assessment trace, Jev response, decision,
+and response returned to the host. The monitor reads the audit file beside the
+active config and does not make provider requests.
 
 The runtime is installed in `~/.local/share/jevexec` by default. Set
 `JEVEXEC_INSTALL_DIR` to change its location.
@@ -142,7 +150,7 @@ follow Codex's configured permissions after the pre-tool rule check.
 
 ## Development
 
-Requires Node.js 20 or newer. No dependency install is needed.
+Requires Node.js 20 or newer. Install dependencies with `npm install`.
 `bin/jevexec` is a Node.js launcher for `src/cli.js`, not a compiled binary.
 
 ```sh
