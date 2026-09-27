@@ -153,6 +153,11 @@ if [[ "$TARGET" != "uninstall" ]]; then
     echo "jevexec requires Node.js 20 or newer." >&2
     exit 1
   fi
+  if ! command -v npm >/dev/null 2>&1; then
+    echo "jevexec installer requires npm to install its runtime dependencies." >&2
+    exit 1
+  fi
+  npm install --no-audit --no-fund --prefix "$SOURCE_DIR"
 fi
 
 configure_host() {
