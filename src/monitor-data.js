@@ -48,6 +48,84 @@ export function summarizeEvents(events) {
   return summary;
 }
 
+export function jevAnswerSummary(event) {
+  const answers = jevAnswers(event);
+  if (!answers || typeof answers !== "object" || Array.isArray(answers)) {
+    return { risk: "—", review: "—", authorized: "—", rules: "—" };
+  }
+
+  const riskScore = answers.risk?.score;
+  const risk = Number.isFinite(riskScore)
+    ? (["low", "medium", "high"][Math.max(0, Math.min(2, Math.round(riskScore)))] ?? "—")
+    : "—";
+  const review = answerLabel(answers.approval?.noul ?? answers.approval?.probability);
+  const authorized = answerLabel(answers.authorization?.noul ?? answers.authorization?.probability);
+  const guardrailAnswers = Object.entries(answers)
+    .filter(([key]) => key.startsWith("guardrail_") && !key.endsWith("_approval"))
+    .map(([, answer]) => answer?.noul ?? answer?.probability)
+    .filter((value) => Number.isFinite(value));
+  const ruleCounts = [
+    ["pass", guardrailAnswers.filter((value) => value >= 0.8).length],
+    ["fail", guardrailAnswers.filter((value) => value <= 0.2).length],
+    ["unsure", guardrailAnswers.filter((value) => value > 0.2 && value < 0.8).length]
+  ];
+  const rules = guardrailAnswers.length
+    ? ruleCounts.filter(([, count]) => count > 0).map(([label, count]) => `${count} ${label}`).join(" ")
+    : "—";
+  return { risk, review, authorized, rules };
+}
+
+export function jevAnswerLines(event) {
+  const answers = jevAnswers(event);
+  if (!answers || typeof answers !== "object" || Array.isArray(answers)) {
+    return ["No structured Jev answers recorded."];
+  }
+  const lines = [];
+  const riskScore = answers.risk?.score;
+  if (Number.isFinite(riskScore)) {
+    const risk = ["low", "medium", "high"][Math.max(0, Math.min(2, Math.round(riskScore)))] ?? "unknown";
+    lines.push(`Risk: ${risk} (${riskScore}/2)`);
+  }
+  appendProbability(lines, "Human review", answers.approval?.noul ?? answers.approval?.probability);
+  appendProbability(lines, "Direct authorization", answers.authorization?.noul ?? answers.authorization?.probability);
+  for (const [key, answer] of Object.entries(answers)) {
+    if (!key.startsWith("guardrail_") || key.endsWith("_approval")) continue;
+    const id = key.slice("guardrail_".length);
+    const probability = answer?.noul ?? answer?.probability;
+    if (Number.isFinite(probability)) {
+      const compliance = probability >= 0.8 ? "follows" : probability <= 0.2 ? "conflicts" : "uncertain";
+      const approval = answers[`${key}_approval`]?.noul ?? answers[`${key}_approval`]?.probability;
+      const approvalText = Number.isFinite(approval) ? `; approval if conflicting: ${yesNoMaybe(approval)} (${percent(approval)})` : "";
+      lines.push(`Rule ${id}: ${compliance} (${percent(probability)})${approvalText}`);
+    }
+  }
+  return lines.length ? lines : ["No recognized Jev question answers recorded."];
+}
+
+function jevAnswers(event) {
+  const response = [...(event.trace ?? [])].reverse().find((item) => item?.step === "jev_response");
+  const body = response?.body;
+  return body && typeof body === "object" ? body.answers ?? body.results : undefined;
+}
+
+function appendProbability(lines, label, value) {
+  if (Number.isFinite(value)) lines.push(`${label}: ${yesNoMaybe(value)} (${percent(value)})`);
+}
+
+function yesNoMaybe(value) {
+  if (value >= 0.8) return "yes";
+  if (value <= 0.2) return "no";
+  return "maybe";
+}
+
+function percent(value) {
+  return `${Math.round(value * 100)}%`;
+}
+
+function answerLabel(value) {
+  return Number.isFinite(value) ? yesNoMaybe(value) : "—";
+}
+
 export function watchAuditFile(path, onSnapshot, { pollMs = 1000, debounceMs = 40 } = {}) {
   let closed = false;
   let refreshTimer;
@@ -105,6 +183,9 @@ export function eventDetailLines(event) {
     `Host: ${event.request?.host ?? "unknown"}    Hook: ${event.request?.hookEventName ?? "CLI"}    Tool: ${event.request?.tool ?? "unknown"}`,
     `Decision: ${event.assessment?.decision ?? "unknown"} (${event.assessment?.source ?? "no source"})`,
     `Reason: ${event.assessment?.reason ?? "No assessment reason recorded"}`,
+    "",
+    "JEV ANSWERS",
+    ...jevAnswerLines(event),
     "",
     "REQUEST"
   ];

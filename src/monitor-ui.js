@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Box, Text, useApp, useInput, useStdout } from "ink";
-import { eventDetailLines, summarizeEvents, watchAuditFile } from "./monitor-data.js";
+import { eventDetailLines, jevAnswerSummary, summarizeEvents, watchAuditFile } from "./monitor-data.js";
 
 const h = React.createElement;
 const DECISION_COLORS = { allow: "green", ask: "yellow", deny: "red", unavailable: "magenta" };
@@ -92,7 +92,7 @@ export function MonitorApp({ auditPath }) {
             ...visibleDetails.map((line, index) => h(Text, { key: `${detailOffset + index}`, color: line === "ASSESSMENT TRACE" ? "cyan" : undefined }, line)))
           : h(Text, { dimColor: true }, "No audit events yet."))
         : h(Box, { flexDirection: "column" },
-          h(Text, { dimColor: true }, "  TIME     HOST   HOOK         TOOL           DECISION  JEV"),
+          h(Text, { dimColor: true }, "  TIME     HOST  HOOK    TOOL      DECISION RISK   REVIEW AUTH   RULES"),
           ...eventsNewestFirst.slice(listStart, listStart + rowsToShow).map((event, visibleIndex) => {
             const index = listStart + visibleIndex;
             return eventRow(event, index === selectedIndex, index);
@@ -112,14 +112,18 @@ export function MonitorApp({ auditPath }) {
 function eventRow(event, selected, index) {
   const request = event.request ?? {};
   const hook = hookLabel(request.hookEventName ?? (request.host === "cli" ? "check" : "unknown"));
-  const hasJev = event.trace?.some((item) => item?.step === "jev_request");
   const decision = event.assessment?.decision ?? "unknown";
   const time = event.at ? new Date(event.at).toLocaleTimeString() : "--:--:--";
+  const jev = jevAnswerSummary(event);
   return h(Text, { key: event.id ?? `${event.at}-${index}`, color: selected ? "cyan" : undefined, bold: selected },
-    `${selected ? "▶" : " "} ${time} ${clip(request.host ?? "?", 6).padEnd(6)} ${clip(hook, 12).padEnd(12)} ${clip(request.tool ?? "?", 14).padEnd(14)} `,
-    h(Text, { color: DECISION_COLORS[decision] ?? "gray" }, clip(decision.toUpperCase(), 9).padEnd(9)),
-    ` ${hasJev ? "yes" : "no"}`
+    `${selected ? "▶" : " "} ${cell(time, 8)} ${cell(request.host ?? "?", 5)} ${cell(hook, 7)} ${cell(request.tool ?? "?", 9)} `,
+    h(Text, { color: DECISION_COLORS[decision] ?? "gray" }, cell(decision.toUpperCase(), 8)),
+    ` ${cell(jev.risk, 6)} ${cell(jev.review, 6)} ${cell(jev.authorized, 6)} ${clip(jev.rules, 14)}`
   );
+}
+
+function cell(value, width) {
+  return clip(value, width).padEnd(width);
 }
 
 function hookLabel(hook) {
