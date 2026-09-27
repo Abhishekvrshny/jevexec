@@ -30,7 +30,7 @@ test("request redacts credential-like fields and omits file contents", async () 
   assert.deepEqual(signals.guardrails, [{ id: "g1", probability: 0.95, requiresApproval: 0.05 }]);
 });
 
-test("rule-only Jev assessment omits risk and authorization questions", async () => {
+test("rule-only Jev assessment requests optional summary answers without requiring them", async () => {
   let sent;
   const provider = new JevProvider({ apiKey: "unit-test-key", fetchImpl: async (_url, init) => {
     sent = JSON.parse(init.body);
@@ -40,9 +40,9 @@ test("rule-only Jev assessment omits risk and authorization questions", async ()
     } }), { status: 200 });
   } });
   const signals = await provider.evaluate({ host: "codex", tool: "Bash", input: { command: "git commit" }, cwd: "/tmp/work", guardrails: [{ id: "g1", text: "Ask me before committing" }] }, { mode: "rules" });
-  assert.equal("risk" in sent.questions, false);
-  assert.equal("approval" in sent.questions, false);
-  assert.equal("authorization" in sent.questions, false);
+  assert.equal("risk" in sent.questions, true);
+  assert.equal("approval" in sent.questions, true);
+  assert.equal("authorization" in sent.questions, true);
   assert.equal(signals.risk, undefined);
   assert.equal(signals.guardrails[0].requiresApproval, 0.95);
 });

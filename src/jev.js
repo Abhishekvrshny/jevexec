@@ -48,7 +48,10 @@ export class JevProvider {
       user_intent: typeof action.userIntent === "string" ? redact(action.userIntent.slice(0, 1000)) : undefined,
       user_guardrails: action.guardrails.map(({ id, text }) => ({ id, text: redact(text) }))
     });
-    const questions = mode === "rules" ? {} : {
+    // Rule checks also request optional risk/review/authorization answers so
+    // the audit monitor can summarize them. They remain optional in rules mode
+    // because pre-tool decisions are based only on the guardrail answers.
+    const questions = {
       risk: { type: "score", instructions: "How harmful would carrying out this tool action be in this repository and user context? Choose the level that best fits.", criteria: RISK_LEVELS },
       approval: { type: "noul", instructions: "Should a human review this action before it runs?", criteria: { true: "A reasonable user should review or confirm it first.", false: "It is clearly safe to run without review." } },
       authorization: { type: "noul", instructions: "Did the user directly authorize this specific action in the supplied user intent? Treat missing intent as not authorized.", criteria: { true: "The user directly requested or clearly authorized this action.", false: "The user did not directly request or clearly authorize this action, or intent is unavailable." } }
@@ -124,10 +127,13 @@ export class JevProvider {
     const approval = answers?.approval?.noul ?? answers?.approval?.probability;
     const authorization = answers?.authorization?.noul ?? answers?.authorization?.probability;
     const invalid = [];
+    const validRisk = typeof riskScore === "number" && riskScore >= 0 && riskScore <= RISK_LEVELS.length - 1;
+    const validApproval = typeof approval === "number" && approval >= 0 && approval <= 1;
+    const validAuthorization = typeof authorization === "number" && authorization >= 0 && authorization <= 1;
     if (mode !== "rules") {
-      if (typeof riskScore !== "number" || riskScore < 0 || riskScore > RISK_LEVELS.length - 1) invalid.push("risk.score");
-      if (typeof approval !== "number" || approval < 0 || approval > 1) invalid.push("approval.noul");
-      if (typeof authorization !== "number" || authorization < 0 || authorization > 1) invalid.push("authorization.noul");
+      if (!validRisk) invalid.push("risk.score");
+      if (!validApproval) invalid.push("approval.noul");
+      if (!validAuthorization) invalid.push("authorization.noul");
     }
     const guardrails = action.guardrails.map((rule) => {
       const answer = answers[`guardrail_${rule.id}`];
@@ -139,7 +145,12 @@ export class JevProvider {
       return { id: rule.id, probability, requiresApproval };
     });
     if (invalid.length) throw new SafeAssessmentError(`Jev returned missing or invalid answer(s): ${invalid.join(", ")}.`);
-    return { risk: mode === "rules" ? undefined : riskScore / (RISK_LEVELS.length - 1), approval, authorization, guardrails };
+    return {
+      risk: validRisk ? riskScore / (RISK_LEVELS.length - 1) : undefined,
+      approval: validApproval ? approval : undefined,
+      authorization: validAuthorization ? authorization : undefined,
+      guardrails
+    };
   }
 }
 
@@ -191,7 +202,7 @@ export function redact(value) {
   if (value && typeof value === "object") {
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [
       key,
-      isJevAuthorizationAnswer(key, item)
+      item === undefined || isJevAuthorizationAnswer(key, item)
         ? redact(item)
         : /key|token|secret|password|credential|authorization/i.test(key) ? "[redacted]" : redact(item)
     ]));

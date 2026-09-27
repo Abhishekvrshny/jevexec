@@ -129,12 +129,14 @@ Codex and Claude; pass `codex` or `claude` to install for one host.
 jevexec runtime, saved rules, and audit log in place.
 
 The `PreToolUse` hook checks local hard-deny rules and configured natural-language
-user rules before the host evaluates tool permissions. Clear conflicts with a
-prohibition deny the action. Jev interprets whether a conflicting rule requires
-approval instead: Claude asks through its native permission flow, while Codex
-blocks the call because Codex does not support forcing `ask` from `PreToolUse`.
-If Jev cannot determine rule compliance, or is unavailable, the hook leaves the
-decision to the host's normal permission flow.
+user rules before the host evaluates tool permissions. When it calls Jev for a
+guardrail check, Jev also returns optional risk, human-review, and authorization
+summaries for the monitor; those summaries do not change the pre-tool decision.
+Clear conflicts with a prohibition deny the action. Jev interprets whether a
+conflicting rule requires approval instead: Claude asks through its native
+permission flow, while Codex blocks the call because Codex does not support
+forcing `ask` from `PreToolUse`. If Jev cannot determine rule compliance, or is
+unavailable, the hook leaves the decision to the host's normal permission flow.
 
 The `PermissionRequest` hook runs only when the host is already requesting
 approval. It evaluates risk, authorization, and user rules again. Clear rule

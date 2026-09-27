@@ -49,85 +49,43 @@ export function summarizeEvents(events) {
 }
 
 export function jevAnswerSummary(event) {
-  const signals = jevSignals(event);
-  if (signals) {
-    const risk = Number.isFinite(signals.risk)
-      ? (["low", "medium", "high"][Math.max(0, Math.min(2, Math.round(signals.risk * 2)))] ?? "—")
-      : "—";
-    return {
-      risk,
-      review: answerLabel(signals.approval),
-      authorized: answerLabel(signals.authorization),
-      rules: summarizeGuardrails(signals.guardrails)
-    };
-  }
-
-  const answers = jevAnswers(event);
-  if (!answers || typeof answers !== "object" || Array.isArray(answers)) {
-    return { risk: "—", review: "—", authorized: "—", rules: "—" };
-  }
-
-  const riskScore = answers.risk?.score;
-  const risk = Number.isFinite(riskScore)
-    ? (["low", "medium", "high"][Math.max(0, Math.min(2, Math.round(riskScore)))] ?? "—")
-    : "—";
-  const review = answerLabel(answers.approval?.noul ?? answers.approval?.probability);
-  const authorized = answerLabel(answers.authorization?.noul ?? answers.authorization?.probability);
-  const guardrailAnswers = Object.entries(answers)
-    .filter(([key]) => key.startsWith("guardrail_") && !key.endsWith("_approval"))
-    .map(([, answer]) => answer?.noul ?? answer?.probability)
-    .filter((value) => Number.isFinite(value));
-  const rules = summarizeGuardrails(guardrailAnswers);
-  return { risk, review, authorized, rules };
+  const values = jevAnswerValues(event);
+  const risk = Number.isFinite(values.risk)
+    ? (["low", "medium", "high"][Math.max(0, Math.min(2, Math.round(values.risk * 2)))] ?? "—")
+    : notAsked(event, "risk") ? "n/a" : "—";
+  const review = Number.isFinite(values.approval)
+    ? answerLabel(values.approval)
+    : notAsked(event, "approval") ? "n/a" : "—";
+  const authorized = Number.isFinite(values.authorization)
+    ? answerLabel(values.authorization)
+    : notAsked(event, "authorization") ? "n/a" : "—";
+  return { risk, review, authorized, rules: summarizeGuardrails(values.guardrails) };
 }
 
 export function jevAnswerLines(event) {
-  const signals = jevSignals(event);
-  if (signals) {
-    const lines = [];
-    if (Number.isFinite(signals.risk)) {
-      const score = signals.risk * 2;
-      const risk = ["low", "medium", "high"][Math.max(0, Math.min(2, Math.round(score)))] ?? "unknown";
-      lines.push(`Risk: ${risk} (${score}/2)`);
-    }
-    appendProbability(lines, "Human review", signals.approval);
-    appendProbability(lines, "Direct authorization", signals.authorization);
-    for (const rule of signals.guardrails ?? []) {
-      const probability = rule?.probability;
-      if (!Number.isFinite(probability)) continue;
-      const compliance = probability >= 0.8 ? "follows" : probability <= 0.2 ? "conflicts" : "uncertain";
-      const approvalText = Number.isFinite(rule.requiresApproval)
-        ? `; approval if conflicting: ${yesNoMaybe(rule.requiresApproval)} (${percent(rule.requiresApproval)})`
-        : "";
-      lines.push(`Rule ${rule.id}: ${compliance} (${percent(probability)})${approvalText}`);
-    }
-    return lines.length ? lines : ["No recognized Jev question answers recorded."];
-  }
-
-  const answers = jevAnswers(event);
-  if (!answers || typeof answers !== "object" || Array.isArray(answers)) {
-    return ["No structured Jev answers recorded."];
-  }
+  const values = jevAnswerValues(event);
   const lines = [];
-  const riskScore = answers.risk?.score;
-  if (Number.isFinite(riskScore)) {
-    const risk = ["low", "medium", "high"][Math.max(0, Math.min(2, Math.round(riskScore)))] ?? "unknown";
-    lines.push(`Risk: ${risk} (${riskScore}/2)`);
+  if (Number.isFinite(values.risk)) {
+    const score = values.risk * 2;
+    const risk = ["low", "medium", "high"][Math.max(0, Math.min(2, Math.round(score)))] ?? "unknown";
+    lines.push(`Risk: ${risk} (${score}/2)`);
+  } else if (notAsked(event, "risk")) {
+    lines.push("Risk: not assessed for this hook.");
   }
-  appendProbability(lines, "Human review", answers.approval?.noul ?? answers.approval?.probability);
-  appendProbability(lines, "Direct authorization", answers.authorization?.noul ?? answers.authorization?.probability);
-  for (const [key, answer] of Object.entries(answers)) {
-    if (!key.startsWith("guardrail_") || key.endsWith("_approval")) continue;
-    const id = key.slice("guardrail_".length);
-    const probability = answer?.noul ?? answer?.probability;
-    if (Number.isFinite(probability)) {
-      const compliance = probability >= 0.8 ? "follows" : probability <= 0.2 ? "conflicts" : "uncertain";
-      const approval = answers[`${key}_approval`]?.noul ?? answers[`${key}_approval`]?.probability;
-      const approvalText = Number.isFinite(approval) ? `; approval if conflicting: ${yesNoMaybe(approval)} (${percent(approval)})` : "";
-      lines.push(`Rule ${id}: ${compliance} (${percent(probability)})${approvalText}`);
-    }
+  if (Number.isFinite(values.approval)) appendProbability(lines, "Human review", values.approval);
+  else if (notAsked(event, "approval")) lines.push("Human review: not assessed for this hook.");
+  if (Number.isFinite(values.authorization)) appendProbability(lines, "Direct authorization", values.authorization);
+  else if (notAsked(event, "authorization")) lines.push("Direct authorization: not assessed for this hook.");
+  for (const rule of values.guardrails) {
+    const probability = rule.probability;
+    if (!Number.isFinite(probability)) continue;
+    const compliance = probability >= 0.8 ? "follows" : probability <= 0.2 ? "conflicts" : "uncertain";
+    const approvalText = Number.isFinite(rule.requiresApproval)
+      ? `; approval if conflicting: ${yesNoMaybe(rule.requiresApproval)} (${percent(rule.requiresApproval)})`
+      : "";
+    lines.push(`Rule ${rule.id}: ${compliance} (${percent(probability)})${approvalText}`);
   }
-  return lines.length ? lines : ["No recognized Jev question answers recorded."];
+  return lines.length ? lines : ["No structured Jev answers recorded."];
 }
 
 function jevAnswers(event) {
@@ -139,6 +97,35 @@ function jevAnswers(event) {
 function jevSignals(event) {
   const item = [...(event.trace ?? [])].reverse().find((entry) => entry?.step === "jev_signals");
   return item?.result && typeof item.result === "object" ? item.result : undefined;
+}
+
+function jevAnswerValues(event) {
+  const signals = jevSignals(event) ?? {};
+  const answers = jevAnswers(event) ?? {};
+  const rawRisk = answers.risk?.score;
+  const rawApproval = answers.approval?.noul ?? answers.approval?.probability;
+  const rawAuthorization = answers.authorization?.noul ?? answers.authorization?.probability;
+  const rawGuardrails = Object.entries(answers)
+    .filter(([key]) => key.startsWith("guardrail_") && !key.endsWith("_approval"))
+    .map(([key, answer]) => ({
+      id: key.slice("guardrail_".length),
+      probability: answer?.noul ?? answer?.probability,
+      requiresApproval: answers[`${key}_approval`]?.noul ?? answers[`${key}_approval`]?.probability
+    }))
+    .filter((rule) => Number.isFinite(rule.probability));
+  return {
+    risk: Number.isFinite(signals.risk) ? signals.risk : Number.isFinite(rawRisk) ? rawRisk / 2 : undefined,
+    approval: Number.isFinite(signals.approval) ? signals.approval : rawApproval,
+    authorization: Number.isFinite(signals.authorization) ? signals.authorization : rawAuthorization,
+    guardrails: Array.isArray(signals.guardrails) && signals.guardrails.length ? signals.guardrails : rawGuardrails
+  };
+}
+
+function notAsked(event, question) {
+  if (event.request?.hookEventName !== "PreToolUse") return false;
+  const item = [...(event.trace ?? [])].reverse().find((entry) => entry?.step === "jev_request");
+  const questions = item?.request?.payload?.questions;
+  return !questions || !Object.hasOwn(questions, question);
 }
 
 function summarizeGuardrails(guardrails) {

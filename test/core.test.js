@@ -68,16 +68,16 @@ test("hook adapters use event-specific responses", () => {
   assert.equal(claudeDecision(review, "PermissionRequest"), null);
 });
 
-test("pre-tool checks evaluate rules without requesting risk signals", async () => {
+test("pre-tool checks use only guardrail signals for their decision", async () => {
   let mode;
-  const action = { input: { command: "git add -A && git commit -m save" }, guardrails: [{ id: "g1", text: "Do not git add or commit" }] };
+  const action = { input: { command: "git status" }, guardrails: [{ id: "g1", text: "Do not git add or commit" }] };
   const result = await assessRules(action, { evaluate: async (_action, options) => {
     mode = options.mode;
-    return { guardrails: [{ id: "g1", probability: 0.05, requiresApproval: 0.01 }] };
+    return { risk: 1, approval: 0.99, authorization: 0.01, guardrails: [{ id: "g1", probability: 0.95, requiresApproval: 0.01 }] };
   } });
   assert.equal(mode, "rules");
-  assert.equal(result.decision, "deny");
-  assert.equal(result.source, "jev-guardrail");
+  assert.equal(result.decision, "allow");
+  assert.equal(result.source, "jev-rules");
 });
 
 test("Codex blocks approval-required conflicts in PreToolUse", () => {

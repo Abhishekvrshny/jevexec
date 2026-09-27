@@ -18,8 +18,11 @@ config object, with environment variables taking precedence. Keys remain
 environment-only.
 
 Both providers send selected command/path fields, cwd, bounded user intent, and
-the complete enabled guardrail set. Permission requests include risk and
-authorization questions; pre-tool requests include only guardrail questions.
+the complete enabled guardrail set. When a pre-tool guardrail check calls Jev,
+the request also asks for optional risk, human-review, and authorization
+summaries so the monitor can show them. Pre-tool decisions still use only the
+guardrail answers, and missing optional summaries do not fail the check.
+Permission requests require risk and authorization answers for decisioning.
 For each guardrail, Jev reports compliance and whether its wording requires
 explicit approval rather than prohibition. Tool output, file contents,
 credentials, and instruction files are excluded. Payloads over the initial
