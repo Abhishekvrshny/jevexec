@@ -17,7 +17,8 @@ test("request redacts credential-like fields and omits file contents", async () 
       risk: { type: "score", score: 2, probabilities: { 0: 0, 1: 0, 2: 1 }, legend: { 0: "low", 1: "medium", 2: "high" } },
       approval: { type: "noul", noul: 0.05 },
       authorization: { type: "noul", noul: 0.1 },
-      guardrail_g1: { type: "noul", noul: 0.95 }
+      guardrail_g1: { type: "noul", noul: 0.95 },
+      guardrail_g1_approval: { type: "noul", noul: 0.05 }
     } }), { status: 200, headers: { "content-type": "application/json" } });
   } });
   const signals = await provider.evaluate({ host: "claude", tool: "Bash", input: { command: "echo Bearer abc.def sk-or-v1-12345678901234567890", content: "private file contents" }, cwd: "/tmp/work", guardrails: [{ id: "g1", text: "Never publish" }] });
@@ -26,7 +27,24 @@ test("request redacts credential-like fields and omits file contents", async () 
   assert.equal(sent.init.headers.authorization, "Bearer unit-test-key");
   assert.doesNotMatch(body.state, /private file contents|abc\.def|12345678901234567890/);
   assert.equal(signals.risk, 1);
-  assert.deepEqual(signals.guardrails, [{ id: "g1", probability: 0.95 }]);
+  assert.deepEqual(signals.guardrails, [{ id: "g1", probability: 0.95, requiresApproval: 0.05 }]);
+});
+
+test("rule-only Jev assessment omits risk and authorization questions", async () => {
+  let sent;
+  const provider = new JevProvider({ apiKey: "unit-test-key", fetchImpl: async (_url, init) => {
+    sent = JSON.parse(init.body);
+    return new Response(JSON.stringify({ answers: {
+      guardrail_g1: { type: "noul", noul: 0.05 },
+      guardrail_g1_approval: { type: "noul", noul: 0.95 }
+    } }), { status: 200 });
+  } });
+  const signals = await provider.evaluate({ host: "codex", tool: "Bash", input: { command: "git commit" }, cwd: "/tmp/work", guardrails: [{ id: "g1", text: "Ask me before committing" }] }, { mode: "rules" });
+  assert.equal("risk" in sent.questions, false);
+  assert.equal("approval" in sent.questions, false);
+  assert.equal("authorization" in sent.questions, false);
+  assert.equal(signals.risk, undefined);
+  assert.equal(signals.guardrails[0].requiresApproval, 0.95);
 });
 
 test("redacts bearer tokens and credential values", () => {

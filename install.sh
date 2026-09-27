@@ -11,7 +11,7 @@ usage() {
   cat <<'EOF'
 Usage: install.sh [codex|claude|both|uninstall]
 
-Install jevexec and register its Codex PermissionRequest and Claude PreToolUse hooks.
+Install jevexec and register PreToolUse and PermissionRequest hooks for Codex and Claude Code.
 Set JEVEXEC_INSTALL_DIR to change where the checkout is stored.
 Set JEVEXEC_BIN_DIR to change where the jevexec command is installed.
 EOF
@@ -188,7 +188,7 @@ if not isinstance(data, dict):
 hooks = data.setdefault("hooks", {})
 if not isinstance(hooks, dict):
     raise SystemExit(f"Cannot safely update {settings}: 'hooks' must be an object.")
-event_names = ["PreToolUse", "PermissionRequest"] if host == "codex" else ["PreToolUse"]
+event_names = ["PreToolUse", "PermissionRequest"]
 
 def is_jevexec(hook):
     if not isinstance(hook, dict):
@@ -215,11 +215,11 @@ for event_name in event_names:
 if action != "uninstall":
     command = f"node {shlex.quote(str(source / 'src' / 'cli.js'))} hook {host}"
     handler = {"type": "command", "command": command, "timeout": 20, "statusMessage": f"jevexec: assessing action"}
-    event_name = "PermissionRequest" if host == "codex" else "PreToolUse"
-    entries = hooks.setdefault(event_name, [])
-    if not isinstance(entries, list):
-        raise SystemExit(f"Cannot safely update {settings}: '{event_name}' must be an array.")
-    entries.append({"matcher": ".*", "hooks": [handler]})
+    for event_name in event_names:
+        entries = hooks.setdefault(event_name, [])
+        if not isinstance(entries, list):
+            raise SystemExit(f"Cannot safely update {settings}: '{event_name}' must be an array.")
+        entries.append({"matcher": ".*", "hooks": [handler.copy()]})
 
 for event_name in event_names:
     if not hooks.get(event_name):

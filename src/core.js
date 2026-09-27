@@ -42,11 +42,17 @@ export function assessLocal(action) {
 
 export function combineSignals(signals, thresholds = {}, action = {}) {
   const askAt = thresholds.ask ?? 0.35;
-  const deniedRule = signals.guardrails?.find((rule) => rule.probability <= 0.2);
-  if (deniedRule) {
-    const configuredRule = action.guardrails?.find((rule) => rule.id === deniedRule.id);
-    const ruleContext = configuredRule ? ` Rule ${configuredRule.id}: “${configuredRule.text}”.` : ` Rule ${deniedRule.id}.`;
-    return assessment("deny", `Denied because Jev found this action conflicts with an explicit user rule.${ruleContext}`, "jev-guardrail");
+  const conflicts = signals.guardrails?.filter((rule) => rule.probability <= 0.2) ?? [];
+  const deniedRule = conflicts.find((rule) => rule.requiresApproval <= 0.2);
+  const approvalRule = conflicts.find((rule) => rule.requiresApproval >= 0.8);
+  const uncertainRule = conflicts.find((rule) => rule.requiresApproval > 0.2 && rule.requiresApproval < 0.8);
+  const conflict = deniedRule ?? approvalRule ?? uncertainRule;
+  if (conflict) {
+    const configuredRule = action.guardrails?.find((rule) => rule.id === conflict.id);
+    const ruleContext = configuredRule ? ` Rule ${configuredRule.id}: “${configuredRule.text}”.` : ` Rule ${conflict.id}.`;
+    if (deniedRule) return assessment("deny", `Denied because Jev found this action conflicts with an explicit user rule.${ruleContext}`, "jev-guardrail");
+    if (approvalRule) return assessment("ask", `This action conflicts with a user rule that requires explicit approval.${ruleContext}`, "jev-guardrail-approval");
+    return assessment("ask", `Jev could not determine whether this conflicting user rule prohibits the action or requires approval.${ruleContext}`, "jev-guardrail");
   }
   if (signals.guardrails?.some((rule) => rule.probability < 0.8)) {
     return assessment("ask", "Jev could not confirm that this action follows every active user rule; review it in the normal permission prompt.", "jev-guardrail");
@@ -62,7 +68,58 @@ export function combineSignals(signals, thresholds = {}, action = {}) {
   return assessment("allow", "Jev found low risk and no explicit user-rule conflict.", "jev");
 }
 
-export async function assess(action, provider, { thresholds, trace = [] } = {}) {
+export async function assessRules(action, provider, { trace = [] } = {}) {
+  const local = assessLocal(action);
+  if (local?.decision === "deny") {
+    trace.push({ step: "local_assessment", result: local });
+    trace.push({ step: "assessment_complete", result: local });
+    return local;
+  }
+  if (!action.guardrails?.length) {
+    const result = assessment("allow", "No active user rules to check.", "rules-none");
+    trace.push({ step: "assessment_complete", result });
+    return result;
+  }
+  try {
+    const signals = await provider.evaluate(action, { trace, mode: "rules" });
+    trace.push({ step: "jev_signals", result: signals });
+    const result = combineRuleSignals(signals, action);
+    trace.push({ step: "assessment_complete", result });
+    return result;
+  } catch (error) {
+    const reason = error instanceof SafeAssessmentError ? error.message : "Jev request failed or timed out.";
+    const result = assessment("unavailable", reason, "jev-error");
+    trace.push({ step: "assessment_error", error: reason, result });
+    trace.push({ step: "assessment_complete", result });
+    return result;
+  }
+}
+
+export function combineRuleSignals(signals, action = {}) {
+  const conflicts = signals.guardrails?.filter((rule) => rule.probability <= 0.2) ?? [];
+  const deniedRule = conflicts.find((rule) => rule.requiresApproval <= 0.2);
+  const approvalRule = conflicts.find((rule) => rule.requiresApproval >= 0.8);
+  const uncertainRule = conflicts.find((rule) => rule.requiresApproval > 0.2 && rule.requiresApproval < 0.8);
+  const conflict = deniedRule ?? approvalRule ?? uncertainRule;
+  if (!conflict) {
+    if (signals.guardrails?.some((rule) => rule.probability < 0.8)) {
+      return assessment("ask", "Jev could not determine whether this action follows every active user rule; continue through the host's normal permission flow.", "jev-guardrail");
+    }
+    return assessment("allow", "Jev found no user-rule conflict.", "jev-rules");
+  }
+  const configuredRule = action.guardrails?.find((rule) => rule.id === conflict.id);
+  const ruleContext = configuredRule ? ` Rule ${configuredRule.id}: “${configuredRule.text}”.` : ` Rule ${conflict.id}.`;
+  if (deniedRule) {
+    return assessment("deny", `Denied because Jev found this action conflicts with an explicit user rule.${ruleContext}`, "jev-guardrail");
+  }
+  if (approvalRule) {
+    return assessment("ask", `This action conflicts with a user rule that requires explicit approval.${ruleContext}`, "jev-guardrail-approval");
+  }
+  return assessment("ask", `Jev could not determine whether this conflicting user rule prohibits the action or requires approval.${ruleContext}`, "jev-guardrail");
+}
+
+export async function assess(action, provider, { thresholds, trace = [], stage = "permission" } = {}) {
+  if (stage === "pretool") return assessRules(action, provider, { trace });
   const local = assessLocal(action);
   if (local) {
     trace.push({ step: "local_assessment", result: local });
@@ -70,7 +127,7 @@ export async function assess(action, provider, { thresholds, trace = [] } = {}) 
     return local;
   }
   try {
-    const signals = await provider.evaluate(action, { trace });
+    const signals = await provider.evaluate(action, { trace, mode: "full" });
     trace.push({ step: "jev_signals", result: signals });
     const result = combineSignals(signals, thresholds, action);
     trace.push({ step: "assessment_complete", result });

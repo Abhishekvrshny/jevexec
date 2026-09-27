@@ -33,6 +33,11 @@ async function hook(host) {
   let raw = "";
   for await (const chunk of process.stdin) raw += chunk;
   const input = JSON.parse(raw);
+  const hookEventName = input.hook_event_name ?? (host === "codex" ? "PermissionRequest" : "PreToolUse");
+  if (hookEventName !== "PreToolUse" && hookEventName !== "PermissionRequest") {
+    throw new Error(`Unsupported hook event '${hookEventName}'.`);
+  }
+  const stage = hookEventName === "PreToolUse" ? "pretool" : "permission";
   const action = {
     host,
     tool: input.tool_name ?? "unknown",
@@ -42,9 +47,11 @@ async function hook(host) {
     guardrails: config.guardrails
   };
   const trace = [];
-  const result = await assess(action, new JevProvider({ settings: config.jev }), { trace });
-  const output = host === "codex" ? codexDecision(result) : claudeDecision(result);
-  await audit(action, result, { trace, responseToHook: output });
+  const result = await assess(action, new JevProvider({ settings: config.jev }), { trace, stage });
+  const output = host === "codex"
+    ? codexDecision(result, hookEventName)
+    : claudeDecision(result, hookEventName);
+  await audit(action, result, { trace, hookEventName, responseToHook: output });
   if (output) process.stdout.write(`${JSON.stringify(output)}\n`);
 }
 
@@ -103,16 +110,17 @@ async function hooks(args) {
 
 function status() {
   const provider = new JevProvider({ settings: config.jev });
-  console.log(JSON.stringify({ config: configPath(), activeGuardrails: config.guardrails.length, provider: provider.provider, apiKeyEnv: provider.apiKeyEnv, apiKeyConfigured: Boolean(provider.apiKey), model: provider.model, codex: "explicit allow/deny decisions are applied; risk and unavailable results defer to Codex permissions", claude: "explicit denies are applied; risk and unavailable results use the native permission prompt" }, null, 2));
+  console.log(JSON.stringify({ config: configPath(), activeGuardrails: config.guardrails.length, provider: provider.provider, apiKeyEnv: provider.apiKeyEnv, apiKeyConfigured: Boolean(provider.apiKey), model: provider.model, codex: "pre-tool rules can deny; permission requests are assessed for risk and may be auto-approved when low risk", claude: "pre-tool rules can deny or ask; permission requests are assessed for risk and may be auto-approved when low risk" }, null, 2));
 }
 
-async function audit(action, result, { trace = [], responseToHook = null } = {}) {
+async function audit(action, result, { trace = [], hookEventName, responseToHook = null } = {}) {
   const path = join(dirname(configPath()), "audit.jsonl");
   const entry = JSON.stringify(redact({
     id: randomUUID(),
     at: new Date().toISOString(),
     request: {
       host: action.host,
+      hookEventName,
       tool: action.tool,
       parameters: action.input,
       cwd: action.cwd,

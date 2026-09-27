@@ -35,7 +35,7 @@ export class JevProvider {
     this.fetchImpl = fetchImpl;
   }
 
-  async evaluate(action, { trace = [] } = {}) {
+  async evaluate(action, { trace = [], mode = "full" } = {}) {
     trace.push({ step: "jev_provider", provider: this.provider, model: this.model, timeoutMs: this.timeoutMs });
     if (!this.providerConfig) throw new SafeAssessmentError(`Unsupported JEV_PROVIDER '${this.provider}'; choose openrouter or typesafe.`);
     if (!this.apiKey) throw new SafeAssessmentError(`Missing API key: set ${this.apiKeyEnv} or JEV_API_KEY in the environment running jevexec.`);
@@ -48,14 +48,23 @@ export class JevProvider {
       user_intent: typeof action.userIntent === "string" ? redact(action.userIntent.slice(0, 1000)) : undefined,
       user_guardrails: action.guardrails.map(({ id, text }) => ({ id, text: redact(text) }))
     });
-    const questions = {
+    const questions = mode === "rules" ? {} : {
       risk: { type: "score", instructions: "How harmful would carrying out this tool action be in this repository and user context? Choose the level that best fits.", criteria: RISK_LEVELS },
       approval: { type: "noul", instructions: "Should a human review this action before it runs?", criteria: { true: "A reasonable user should review or confirm it first.", false: "It is clearly safe to run without review." } },
-      authorization: { type: "noul", instructions: "Did the user directly authorize this specific action in the supplied user intent? Treat missing intent as not authorized.", criteria: { true: "The user directly requested or clearly authorized this action.", false: "The user did not directly authorize this action, or intent is unavailable." } },
-      ...Object.fromEntries(action.guardrails.map((rule) => [`guardrail_${rule.id}`, {
-        type: "noul", instructions: `Does the action comply with user-authored guardrail ${rule.id}? The exact rule is supplied separately in state.user_guardrails.`, criteria: { true: "The action follows this guardrail.", false: "The action conflicts with this guardrail." }
-      }]))
+      authorization: { type: "noul", instructions: "Did the user directly authorize this specific action in the supplied user intent? Treat missing intent as not authorized.", criteria: { true: "The user directly requested or clearly authorized this action.", false: "The user did not directly request or clearly authorize this action, or intent is unavailable." } }
     };
+    for (const rule of action.guardrails) {
+      questions[`guardrail_${rule.id}`] = {
+        type: "noul",
+        instructions: `Does the action comply with user-authored guardrail ${rule.id}? The exact rule is supplied separately in state.user_guardrails.`,
+        criteria: { true: "The action follows this guardrail.", false: "The action conflicts with this guardrail." }
+      };
+      questions[`guardrail_${rule.id}_approval`] = {
+        type: "noul",
+        instructions: `If this action conflicts with user-authored guardrail ${rule.id}, does the rule's wording require asking the user before an otherwise allowed action, rather than prohibiting that action? The exact rule is supplied separately in state.user_guardrails.`,
+        criteria: { true: "The rule requires the user's explicit approval before this action.", false: "The rule prohibits this action or does not require a separate approval." }
+      };
+    }
     const payload = JSON.stringify({ model: this.model, state, questions });
     trace.push({
       step: "jev_request",
@@ -115,17 +124,22 @@ export class JevProvider {
     const approval = answers?.approval?.noul ?? answers?.approval?.probability;
     const authorization = answers?.authorization?.noul ?? answers?.authorization?.probability;
     const invalid = [];
-    if (typeof riskScore !== "number" || riskScore < 0 || riskScore > RISK_LEVELS.length - 1) invalid.push("risk.score");
-    if (typeof approval !== "number" || approval < 0 || approval > 1) invalid.push("approval.noul");
-    if (typeof authorization !== "number" || authorization < 0 || authorization > 1) invalid.push("authorization.noul");
+    if (mode !== "rules") {
+      if (typeof riskScore !== "number" || riskScore < 0 || riskScore > RISK_LEVELS.length - 1) invalid.push("risk.score");
+      if (typeof approval !== "number" || approval < 0 || approval > 1) invalid.push("approval.noul");
+      if (typeof authorization !== "number" || authorization < 0 || authorization > 1) invalid.push("authorization.noul");
+    }
     const guardrails = action.guardrails.map((rule) => {
       const answer = answers[`guardrail_${rule.id}`];
       const probability = answer?.noul ?? answer?.probability;
       if (typeof probability !== "number" || probability < 0 || probability > 1) invalid.push(`guardrail_${rule.id}.noul`);
-      return { id: rule.id, probability };
+      const approvalAnswer = answers[`guardrail_${rule.id}_approval`];
+      const requiresApproval = approvalAnswer?.noul ?? approvalAnswer?.probability;
+      if (typeof requiresApproval !== "number" || requiresApproval < 0 || requiresApproval > 1) invalid.push(`guardrail_${rule.id}_approval.noul`);
+      return { id: rule.id, probability, requiresApproval };
     });
     if (invalid.length) throw new SafeAssessmentError(`Jev returned missing or invalid answer(s): ${invalid.join(", ")}.`);
-    return { risk: riskScore / (RISK_LEVELS.length - 1), approval, authorization, guardrails };
+    return { risk: mode === "rules" ? undefined : riskScore / (RISK_LEVELS.length - 1), approval, authorization, guardrails };
   }
 }
 

@@ -115,24 +115,30 @@ HTTP retry/status details, intermediate assessment results, the final assessment
 and the response returned to the hook (or CLI). Credentials are redacted and
 the audit file is restricted to owner read/write permissions.
 
-`hooks install` registers a `PermissionRequest` hook for Codex and a
-`PreToolUse` hook for Claude; pass `codex` or `claude` to install for one host.
+`hooks install` registers `PreToolUse` and `PermissionRequest` hooks for both
+Codex and Claude; pass `codex` or `claude` to install for one host.
 `hooks uninstall` removes the hooks from both hosts. These commands keep the
 jevexec runtime, saved rules, and audit log in place.
 
-Jev decisioning treats explicit deny rules as decisive: matching local
-hard-deny rules and clear conflicts with configured user guardrails deny the
-action and include the rule context. Jev allows a low-risk action when the user
-authorized it and there is no guardrail conflict or review recommendation.
-Risk, uncertain authorization or rule compliance, and Jev unavailability leave
-the decision to the normal host permission prompt. High risk alone is not an
-explicit deny rule.
+The `PreToolUse` hook checks local hard-deny rules and configured natural-language
+user rules before the host evaluates tool permissions. Clear conflicts with a
+prohibition deny the action. Jev interprets whether a conflicting rule requires
+approval instead: Claude asks through its native permission flow, while Codex
+blocks the call because Codex does not support forcing `ask` from `PreToolUse`.
+If Jev cannot determine rule compliance, or is unavailable, the hook leaves the
+decision to the host's normal permission flow.
 
-For Codex, explicit `allow` and `deny` decisions bypass the approval prompt;
-`ask` and `unavailable` produce no hook decision, so Codex continues its normal
-permission flow. The Codex hook runs at `PermissionRequest`, which only fires
-when Codex is about to ask for approval; it does not assess tools that already
-proceed without approval.
+The `PermissionRequest` hook runs only when the host is already requesting
+approval. It evaluates risk, authorization, and user rules again. Clear rule
+conflicts deny; approval-required conflicts and elevated risk preserve the
+normal prompt. Jev auto-allows a low-risk request only when the user authorized
+the action and no rule conflicts. Jev unavailability preserves the prompt.
+High risk alone is not an explicit deny rule.
+
+For Codex, `PreToolUse` runs before permission evaluation and can deny calls;
+`PermissionRequest` runs only for calls that need approval and can allow, deny,
+or defer to Codex's prompt. Tools that do not trigger `PermissionRequest` still
+follow Codex's configured permissions after the pre-tool rule check.
 
 ## Development
 

@@ -1,10 +1,11 @@
 # First implementation
 
-The host adapters normalize a pre-execution event and translate the shared
-`allow | ask | deny | unavailable` result. `src/core.js` runs explicit local
-hard-deny rules first; only simple, known read-only calls can pass locally.
-Active natural-language guardrails always force Jev evaluation. Uncertain
-syntax, protected paths, and unknown actions go to Jev.
+The host adapters normalize `PreToolUse` and `PermissionRequest` events and
+translate the shared `allow | ask | deny | unavailable` result. At
+`PreToolUse`, `src/core.js` runs local hard-deny rules and asks Jev to evaluate
+configured natural-language guardrails only. At `PermissionRequest`, Jev
+evaluates risk, authorization, and guardrails together. Simple known read-only
+calls can still pass locally when there are no active guardrails.
 
 Provider selection is explicit through `JEV_PROVIDER`; it is never inferred
 from a key or model name. OpenRouter is the default and uses
@@ -16,27 +17,32 @@ and guardrail signals. Provider, model, and base URL may be set in the `jev`
 config object, with environment variables taking precedence. Keys remain
 environment-only.
 
-Both providers send selected command/path fields, cwd, bounded user intent, an
-authorization signal, and the complete enabled guardrail set. Tool output,
-file contents, credentials, and instruction files are excluded. Payloads over
-the initial bound fail closed instead of dropping guardrails. Requests retry
-once for HTTP 429 and 5xx responses under the same 15 second timeout.
+Both providers send selected command/path fields, cwd, bounded user intent, and
+the complete enabled guardrail set. Permission requests include risk and
+authorization questions; pre-tool requests include only guardrail questions.
+For each guardrail, Jev reports compliance and whether its wording requires
+explicit approval rather than prohibition. Tool output, file contents,
+credentials, and instruction files are excluded. Payloads over the initial
+bound fail closed instead of dropping guardrails. Requests retry once for HTTP
+429 and 5xx responses under the same 15 second timeout.
 
 Decisioning follows this precedence:
 
-1. An explicit local hard-deny rule or a clear conflict with a configured user
-   guardrail denies the action and returns the matching rule context.
-2. Low risk, confirmed user authorization, no guardrail conflict, and no Jev
-   recommendation for human review allows the action.
-3. Risk, uncertain authorization or guardrail compliance, and provider
-   unavailability defer to the host's normal permission prompt. A high risk
-   score by itself is not a deny rule.
+1. Pre-tool checks deny local hard-deny rules and clear guardrail conflicts
+   whose wording prohibits the action. Approval-required conflicts ask on
+   Claude and deny on Codex because Codex `PreToolUse` cannot force a prompt.
+2. Uncertain pre-tool rule compliance or provider unavailability leaves the
+   decision to the host's normal permission flow.
+3. Permission requests deny prohibitions, preserve the prompt for approval-
+   required conflicts, elevated risk, uncertain authorization or rule
+   compliance, and provider unavailability. A low-risk request is allowed only
+   with confirmed authorization and no rule conflict. High risk alone is not a
+   deny rule.
 
-For Codex, explicit `allow` and `deny` results bypass the prompt; `ask` and
-`unavailable` return no decision and preserve Codex's normal permission flow.
-Claude Code receives native `ask` and explicit `deny` decisions; `allow` and
-`unavailable` preserve its normal permission flow.
+Codex `PreToolUse` can deny but cannot return a supported `ask` decision;
+`PermissionRequest` can allow, deny, or defer to the normal prompt. Claude
+`PreToolUse` can deny or ask; its `PermissionRequest` can allow or deny, while
+an undecided result preserves its normal permission flow.
 
-This is a first slice, not the full recommended design. Semantic memory,
-project-scoped config, complete guardrail editing, host install
-commands, broader shell analysis, and release calibration remain future work.
+Semantic memory, project-scoped config, richer guardrail editing, broader shell
+analysis, and release calibration remain future work.
