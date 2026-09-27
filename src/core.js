@@ -121,7 +121,7 @@ export function combineRuleSignals(signals, action = {}) {
 export async function assess(action, provider, { thresholds, trace = [], stage = "permission" } = {}) {
   if (stage === "pretool") return assessRules(action, provider, { trace });
   const local = assessLocal(action);
-  if (local) {
+  if (local && (local.decision === "deny" || stage !== "permission")) {
     trace.push({ step: "local_assessment", result: local });
     trace.push({ step: "assessment_complete", result: local });
     return local;

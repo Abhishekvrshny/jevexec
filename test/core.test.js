@@ -30,6 +30,31 @@ test("classifier errors remain unavailable", async () => {
   assert.equal(result.decision, "unavailable");
 });
 
+test("permission requests assess authorization even for locally-known read-only commands", async () => {
+  let evaluated = false;
+  const action = { host: "codex", tool: "Bash", input: { command: "git status" }, guardrails: [] };
+  const result = await assess(action, { evaluate: async () => {
+    evaluated = true;
+    return { risk: 0, approval: 0.01, authorization: 0.99, guardrails: [] };
+  } }, { stage: "permission" });
+  assert.equal(evaluated, true);
+  assert.equal(result.decision, "allow");
+});
+
+test("permission requests preserve the prompt for unauthorized or elevated-risk actions", async () => {
+  const action = { host: "codex", tool: "Bash", input: { command: "git status" }, guardrails: [] };
+  const unauthorized = await assess(action, { evaluate: async () => ({ risk: 0, approval: 0.01, authorization: 0.1, guardrails: [] }) }, { stage: "permission" });
+  const elevated = await assess(action, { evaluate: async () => ({ risk: 0.9, approval: 0.01, authorization: 0.99, guardrails: [] }) }, { stage: "permission" });
+  assert.equal(unauthorized.decision, "ask");
+  assert.equal(elevated.decision, "ask");
+});
+
+test("permission assessment failures leave the host prompt in place", async () => {
+  const action = { host: "codex", tool: "Bash", input: { command: "git status" }, guardrails: [] };
+  const result = await assess(action, { evaluate: async () => { throw new Error("offline"); } }, { stage: "permission" });
+  assert.equal(result.decision, "unavailable");
+});
+
 test("hook adapters use event-specific responses", () => {
   const approved = { decision: "allow", reason: "Approved" };
   const review = { decision: "ask", source: "jev-guardrail-approval", reason: "Review this" };
