@@ -189,9 +189,19 @@ export function redact(value) {
   }
   if (Array.isArray(value)) return value.map(redact);
   if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, /key|token|secret|password|credential|authorization/i.test(key) ? "[redacted]" : redact(item)]));
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [
+      key,
+      isJevAuthorizationAnswer(key, item)
+        ? redact(item)
+        : /key|token|secret|password|credential|authorization/i.test(key) ? "[redacted]" : redact(item)
+    ]));
   }
   return value;
+}
+
+function isJevAuthorizationAnswer(key, value) {
+  return key === "authorization" && (Number.isFinite(value) || (value && typeof value === "object" &&
+    (Number.isFinite(value.noul) || Number.isFinite(value.probability))));
 }
 
 export function safeInput(input) {

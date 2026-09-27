@@ -92,7 +92,7 @@ export function MonitorApp({ auditPath }) {
             ...visibleDetails.map((line, index) => h(Text, { key: `${detailOffset + index}`, color: line === "ASSESSMENT TRACE" ? "cyan" : undefined }, line)))
           : h(Text, { dimColor: true }, "No audit events yet."))
         : h(Box, { flexDirection: "column" },
-          h(Text, { dimColor: true }, "  TIME     HOST  HOOK    TOOL      DECISION RISK   REVIEW AUTH   RULES"),
+          h(Text, { dimColor: true }, "  TIME     HOST  HOOK    TOOL      DECISION RISK     REVIEW   AUTH         RULES"),
           ...eventsNewestFirst.slice(listStart, listStart + rowsToShow).map((event, visibleIndex) => {
             const index = listStart + visibleIndex;
             return eventRow(event, index === selectedIndex, index);
@@ -118,7 +118,7 @@ function eventRow(event, selected, index) {
   return h(Text, { key: event.id ?? `${event.at}-${index}`, color: selected ? "cyan" : undefined, bold: selected },
     `${selected ? "▶" : " "} ${cell(time, 8)} ${cell(request.host ?? "?", 5)} ${cell(hook, 7)} ${cell(request.tool ?? "?", 9)} `,
     h(Text, { color: DECISION_COLORS[decision] ?? "gray" }, cell(decision.toUpperCase(), 8)),
-    ` ${cell(jev.risk, 6)} ${cell(jev.review, 6)} ${cell(jev.authorized, 6)} ${clip(jev.rules, 14)}`
+    ` ${cell(jev.risk, 8)} ${cell(jev.review, 8)} ${cell(jev.authorized, 12)} ${clip(jev.rules, 18)}`
   );
 }
 
